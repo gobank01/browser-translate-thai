@@ -15,7 +15,7 @@ import { mountDubButton, removeDubButton, showDubToast, type DubButtonHandle, ty
 import { createDubScheduler, mergeCues, type DubScheduler, type DubLine } from '~/core/dub/scheduler';
 import { createDucker, type Ducker } from '~/core/dub/ducking';
 import { loadVoices, pickVoice } from '~/core/dub/voice';
-import { CLOUD_PREFIX, CLOUD_VOICES, cloudVoiceId, createCloudVoice, type PreparedEngine } from '~/core/dub/cloudVoice';
+import { cloudVoiceId, sameProviderVoices, createCloudVoice, type PreparedEngine } from '~/core/dub/cloudVoice';
 import type { SpeechEngine } from '~/core/dub/scheduler';
 import type { DubSettings } from '~/core/dub/settings';
 
@@ -274,7 +274,7 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
         onToggle: () => { void toggleDub(); },
         getMenuValues: () => dub.getSettings(),
         voices: dub.fetchCloudAudio
-          ? CLOUD_VOICES.map((v) => ({ value: CLOUD_PREFIX + v.id, label: v.name }))
+          ? sameProviderVoices(dub.getSettings().voiceURI).map((v) => ({ value: v.uri, label: `${v.gender === 'female' ? '♀' : '♂'} ${v.name}` }))
           : [],
         onMenuChange: (patch) => {
           dub.setSettings(patch);

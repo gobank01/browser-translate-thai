@@ -1,5 +1,5 @@
 import type { AppData, EngineRoute } from './schema';
-import { CLOUD_PREFIX, CLOUD_VOICES } from '~/core/dub/cloudVoice';
+import { CLOUD_VOICES } from '~/core/dub/cloudVoice';
 
 /**
  * A Thai-dub build, made by the setup wizard (`node setup.mjs`), which writes
@@ -7,7 +7,7 @@ import { CLOUD_PREFIX, CLOUD_VOICES } from '~/core/dub/cloudVoice';
  *
  *   WXT_THAI_DUB=1          this build is set up for Thai dubbing
  *   WXT_OPENROUTER_KEY      optional: translate with your own model
- *   WXT_ELEVENLABS_KEY      optional: natural voices (see cloudVoice.ts)
+ *   WXT_ELEVENLABS_KEY      optional: premium ElevenLabs voices (see cloudVoice.ts)
  *
  * The extension then translates and dubs into Thai straight after Load
  * unpacked — with OpenRouter if a key was given, the free Google service if not.
@@ -33,7 +33,7 @@ export const PERSONAL_BUILD = Boolean(ENV.WXT_THAI_DUB || ENV.WXT_OPENROUTER_KEY
  * Bumped when the preset's one-time defaults change, so a store that already
  * took an older preset gets the new defaults once — and can change them after.
  */
-const PRESET_VERSION = 4;
+const PRESET_VERSION = 5;
 
 export function applyPersonalPreset(data: AppData, env: PresetEnv = ENV): AppData {
   const key = env.WXT_OPENROUTER_KEY;
@@ -89,8 +89,9 @@ export function applyPersonalPreset(data: AppData, env: PresetEnv = ENV): AppDat
         dub: {
           ...data.settings.dub,
           autoStart: true,
-          voiceURI: data.settings.dub.voiceURI
-            || (env.WXT_ELEVENLABS_KEY && firstVoice ? CLOUD_PREFIX + firstVoice.id : ''),
+          // The cheapest good voice this build has (GPT Audio Mini when there
+          // is an OpenRouter key), else whatever was chosen, else the Mac's.
+          voiceURI: firstVoice?.uri ?? data.settings.dub.voiceURI,
         },
       }),
     },

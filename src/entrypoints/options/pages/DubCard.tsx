@@ -8,7 +8,7 @@ import { SectionHeader } from '~/ui/components/SectionHeader';
 import { Volume2 } from '~/ui/icons';
 import { MAX_DUB_RATE, MIN_DUB_RATE, clampDubRate, type DubSettings } from '~/core/dub/settings';
 import { loadVoices, pickVoice, voicesFor } from '~/core/dub/voice';
-import { CLOUD_PREFIX, CLOUD_TTS, CLOUD_VOICES, cloudVoiceId } from '~/core/dub/cloudVoice';
+import { CLOUD_TTS, CLOUD_VOICES, cloudVoiceId } from '~/core/dub/cloudVoice';
 import type { CloudTtsRequest, CloudTtsResponse } from '~/messaging/types';
 
 /** Read aloud by "Listen" — always Thai, since the voices offered are Thai. */
@@ -64,8 +64,8 @@ export function DubCard() {
   const noVoice = !CLOUD_TTS && voices !== null && voices.length === 0;
   const cloudOptions = CLOUD_TTS
     ? CLOUD_VOICES.map((v) => ({
-        value: CLOUD_PREFIX + v.id,
-        label: `${t(v.gender === 'female' ? 'dubFemale' : 'dubMale')} · ${v.name}`,
+        value: v.uri,
+        label: `${v.provider} · ${t(v.gender === 'female' ? 'dubFemale' : 'dubMale')} · ${v.name}`,
       }))
     : [];
   const systemOptions = (voices ?? []).map((v) => ({ value: v.voiceURI, label: `${t('dubSystemVoice')} · ${v.name}` }));

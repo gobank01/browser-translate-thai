@@ -90,7 +90,7 @@ function firstLineFrom(timeMs: number, lines: readonly DubLine[]): number {
 }
 
 /** How far ahead of the playhead cloud audio is fetched. */
-export const PREPARE_AHEAD_MS = 20_000;
+export const PREPARE_AHEAD_MS = 30_000;
 
 /** The index of the line containing `timeMs`, or -1 in a gap. Lines are sorted. */
 export function lineAt(timeMs: number, lines: readonly DubLine[]): number {

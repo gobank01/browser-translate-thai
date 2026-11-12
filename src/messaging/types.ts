@@ -119,6 +119,7 @@ export interface OpenOptionsRequest {
 export interface CloudTtsRequest {
   type: 'tts:cloud';
   text: string;
+  /** The voice's `voiceURI` (oa:… or el:…). */
   voiceId: string;
 }
 

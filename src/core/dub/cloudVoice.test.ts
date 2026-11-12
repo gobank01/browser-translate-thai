@@ -16,7 +16,8 @@ const utterance = (text: string, rate = 1) =>
 
 describe('cloudVoiceId', () => {
   it('reads the voice id out of a cloud voiceURI only', () => {
-    expect(cloudVoiceId(`${CLOUD_PREFIX}abc`)).toBe('abc');
+    expect(cloudVoiceId(`${CLOUD_PREFIX}abc`)).toBe('el:abc');
+    expect(cloudVoiceId('oa:marin')).toBe('oa:marin');
     expect(cloudVoiceId('com.apple.voice.Kanya')).toBeNull();
   });
 });
@@ -24,8 +25,8 @@ describe('cloudVoiceId', () => {
 describe('parseVoices', () => {
   it('reads the voices setup wrote, skipping junk', () => {
     expect(parseVoices('Anna:a1:female, Somchai:s2:male,bad')).toEqual([
-      { name: 'Anna', id: 'a1', gender: 'female' },
-      { name: 'Somchai', id: 's2', gender: 'male' },
+      { name: 'Anna', id: 'a1', uri: 'el:a1', gender: 'female', provider: 'ElevenLabs' },
+      { name: 'Somchai', id: 's2', uri: 'el:s2', gender: 'male', provider: 'ElevenLabs' },
     ]);
     expect(parseVoices(undefined)).toEqual([]);
   });
@@ -44,15 +45,15 @@ describe('createCloudVoice', () => {
     expect(engine.durationMs('หนึ่ง')).toBe(1500);
   });
 
-  it('keeps at most three requests in flight', async () => {
+  it('keeps at most four requests in flight', async () => {
     const resolvers: Array<() => void> = [];
     const fetchAudio = vi.fn(() => new Promise<string>((r) => resolvers.push(() => r('data:x'))));
     const { engine } = createCloudVoice({ fetchAudio, createAudio: fakeAudio as never, measure: async () => 1 });
     for (const t of ['a', 'b', 'c', 'd', 'e']) engine.prepare(t);
-    expect(fetchAudio).toHaveBeenCalledTimes(3);
+    expect(fetchAudio).toHaveBeenCalledTimes(4);
     resolvers[0]!();
     await tick();
-    expect(fetchAudio).toHaveBeenCalledTimes(4);
+    expect(fetchAudio).toHaveBeenCalledTimes(5);
   });
 
   it('plays a ready clip at the given rate with pitch kept, and reports the end', async () => {

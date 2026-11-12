@@ -19,6 +19,7 @@ import { resolveBasePrompt } from '~/core/prompt/templates';
 import { batchSystemPrompt, batchUserPrompt } from '~/core/batch/prompt';
 import { PERSONAL_BUILD } from '~/storage/personalPreset';
 import { clipKey, getClip, putClip } from '~/core/dub/audioCache';
+import { modelFor, synthesize } from '~/core/dub/cloudTts';
 import { parseBatchArray } from '~/core/batch/parse';
 import { runBatch } from '~/core/batch/runBatch';
 import { languageName, normalizeTargetLanguage } from '~/core/language/targets';
@@ -27,34 +28,22 @@ import { fetchLatestRelease } from '~/core/update/github';
 import { isUpdateAvailable } from '~/core/update/version';
 import type { CloudTtsResponse, Request, TranslateRequest, TranslateBatchRequest } from '~/messaging/types';
 
-/**
- * One dub line from ElevenLabs. The key is baked in at build time
- * (`WXT_ELEVENLABS_KEY` in .env.local — personal builds only) and stays in the
- * background. eleven_v4: ElevenLabs' best Thai voice quality (~2.3 s a line, hidden by fetching 20 s ahead).
- */
-const TTS_MODEL = 'eleven_v4';
 const WATCHLOG_HOST = 'com.bizdrive.watchlog';
 
-async function cloudTts(text: string, voiceId: string): Promise<CloudTtsResponse> {
-  const key = import.meta.env.WXT_ELEVENLABS_KEY;
-  if (!key) return { ok: false, error: 'no-key' };
-  const cacheKey = clipKey(voiceId, TTS_MODEL, text);
+/**
+ * One dub line from a cloud voice (GPT Audio Mini or ElevenLabs), cached on
+ * disk so a line is paid for once. Keys are baked in at build time from
+ * .env.local and stay in the background.
+ */
+async function cloudTts(text: string, voiceURI: string): Promise<CloudTtsResponse> {
+  const cacheKey = clipKey(voiceURI, modelFor(voiceURI), text);
   const cached = await getClip(cacheKey);
   if (cached) return { ok: true, url: cached };
   try {
-    const res = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_64`,
-      {
-        method: 'POST',
-        headers: { 'xi-api-key': key, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, model_id: TTS_MODEL, language_code: 'th' }),
-      },
-    );
-    if (!res.ok) return { ok: false, error: `http-${res.status}` };
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    let bin = '';
-    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-    const url = `data:audio/mpeg;base64,${btoa(bin)}`;
+    const url = await synthesize(voiceURI, text, {
+      openrouter: import.meta.env.WXT_OPENROUTER_KEY,
+      elevenlabs: import.meta.env.WXT_ELEVENLABS_KEY,
+    });
     await putClip(cacheKey, url);
     return { ok: true, url };
   } catch (e) {

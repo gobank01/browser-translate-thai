@@ -23,7 +23,7 @@ describe('applyPersonalPreset', () => {
     const data = createDefaultAppData();
     data.providers.openrouter.apiKey = 'mine';
     data.settings.engines.subtitle = { provider: 'google' };
-    data.settings.personalPreset = 4;
+    data.settings.personalPreset = 5;
     data.settings.subtitleStyle = { ...data.settings.subtitleStyle, displayMode: 'bilingual' };
     const out = applyPersonalPreset(data, { WXT_OPENROUTER_KEY: 'sk-or-test' });
     expect(out.settings.subtitleStyle.displayMode).toBe('bilingual');

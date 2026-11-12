@@ -1,38 +1,70 @@
 import type { SpeechEngine } from './scheduler';
 
 /**
- * Natural Thai voices from ElevenLabs, behind the same shape as the browser's
- * speechSynthesis so the scheduler drives either one.
+ * Voices that live in the cloud, behind the same shape as the browser's
+ * speechSynthesis so the scheduler drives either one:
+ *
+ *   oa:<voice>   GPT Audio Mini through OpenRouter — the default, about 1 baht
+ *                for a 10-minute video (needs WXT_OPENROUTER_KEY)
+ *   el:<id>      ElevenLabs — premium voices (needs WXT_ELEVENLABS_KEY)
  *
  * Audio is fetched ahead of the playhead (`prepare`), kept by text, and played
  * through an <audio> element whose playbackRate does the auto-rate — with the
  * real clip length known, the rate fits exactly instead of by estimate.
  */
 
-/** voiceURI prefix marking a cloud voice in `DubSettings.voiceURI`. */
+/** voiceURI prefix of an ElevenLabs voice. */
 export const CLOUD_PREFIX = 'el:';
+/** voiceURI prefix of a GPT Audio Mini voice. */
+export const OMNI_PREFIX = 'oa:';
 
-/** Whether this build can reach ElevenLabs (a personal build with a key). */
-export const CLOUD_TTS = Boolean(import.meta.env.WXT_ELEVENLABS_KEY);
+export interface CloudVoiceInfo {
+  /** Provider's id for the voice. */
+  id: string;
+  /** What goes in `DubSettings.voiceURI`. */
+  uri: string;
+  name: string;
+  gender: 'female' | 'male';
+  provider: 'GPT' | 'ElevenLabs';
+}
 
-export interface CloudVoiceInfo { id: string; name: string; gender: 'female' | 'male' }
+/** GPT Audio Mini voices that read Thai well, picked by ear. */
+export const OMNI_VOICES: readonly CloudVoiceInfo[] = (
+  [['marin', 'Marin', 'female'], ['coral', 'Coral', 'female'], ['cedar', 'Cedar', 'male'], ['ash', 'Ash', 'male']] as const
+).map(([id, name, gender]) => ({ id, uri: OMNI_PREFIX + id, name, gender, provider: 'GPT' as const }));
 
 /**
- * The voices offered, from `WXT_DUB_VOICES` ("Name:voiceId:female,Name:voiceId:male",
- * written by the setup wizard from the voices on your own ElevenLabs account).
- * Voice ids belong to an account, so there is no built-in list.
+ * ElevenLabs voices from `WXT_DUB_VOICES` ("Name:voiceId:female,Name:voiceId:male",
+ * written by the setup wizard from the voices on your own account — voice ids
+ * belong to an account, so there is no built-in list).
  */
 export function parseVoices(raw: string | undefined): CloudVoiceInfo[] {
   return (raw ?? '').split(',').flatMap((item) => {
     const [name, id, gender] = item.split(':').map((p) => p.trim());
-    return name && id ? [{ id, name, gender: gender === 'male' ? 'male' as const : 'female' as const }] : [];
+    return name && id
+      ? [{ id, uri: CLOUD_PREFIX + id, name, gender: gender === 'male' ? 'male' as const : 'female' as const, provider: 'ElevenLabs' as const }]
+      : [];
   });
 }
 
-export const CLOUD_VOICES: readonly CloudVoiceInfo[] = parseVoices(import.meta.env.WXT_DUB_VOICES);
+/** Every cloud voice this build can reach, GPT first. */
+export const CLOUD_VOICES: readonly CloudVoiceInfo[] = [
+  ...(import.meta.env.WXT_OPENROUTER_KEY ? OMNI_VOICES : []),
+  ...(import.meta.env.WXT_ELEVENLABS_KEY ? parseVoices(import.meta.env.WXT_DUB_VOICES) : []),
+];
 
+/** Whether this build has any cloud voice. */
+export const CLOUD_TTS = CLOUD_VOICES.length > 0;
+
+/** The voiceURI itself when it names a cloud voice, else null (a system voice). */
 export function cloudVoiceId(voiceURI: string): string | null {
-  return voiceURI.startsWith(CLOUD_PREFIX) ? voiceURI.slice(CLOUD_PREFIX.length) : null;
+  return voiceURI.startsWith(CLOUD_PREFIX) || voiceURI.startsWith(OMNI_PREFIX) ? voiceURI : null;
+}
+
+/** The voices from the same provider as `voiceURI` — what a quick switch offers. */
+export function sameProviderVoices(voiceURI: string, voices = CLOUD_VOICES): readonly CloudVoiceInfo[] {
+  const current = voices.find((v) => v.uri === voiceURI);
+  return current ? voices.filter((v) => v.provider === current.provider) : voices.filter((v) => v.provider === voices[0]?.provider);
 }
 
 /** Hooks the scheduler uses when audio has to be fetched before it can play. */
@@ -47,7 +79,7 @@ export interface PreparedEngine {
 interface Clip { status: 'loading' | 'ready' | 'failed'; url?: string; durationMs?: number }
 
 /** Requests in flight at once: enough to stay ahead, few enough for the API's limits. */
-const MAX_IN_FLIGHT = 3;
+const MAX_IN_FLIGHT = 4;
 /** Clips kept, oldest dropped first (~50 KB each). */
 const MAX_CLIPS = 400;
 

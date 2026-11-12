@@ -16,13 +16,10 @@ vi.mock('./fetchTranscript', async (orig) => ({
   fetchTranscript: vi.fn(async () => [{ id: 0, startMs: 0, endMs: 5000, text: 'Hello' }]),
 }));
 
-vi.mock('~/core/dub/cloudVoice', async (orig) => ({
-  ...((await orig()) as object),
-  CLOUD_VOICES: [
-    { id: 'brM9iIbwDREZaWL8luun', name: 'Anna', gender: 'female' },
-    { id: 'XLXcyPK1jTjw1pYLLcM9', name: 'Somchai', gender: 'male' },
-  ],
-}));
+vi.mock('~/core/dub/cloudVoice', async (orig) => {
+  const actual = (await orig()) as typeof import('~/core/dub/cloudVoice');
+  return { ...actual, sameProviderVoices: (uri: string) => actual.sameProviderVoices(uri, actual.OMNI_VOICES) };
+});
 
 import { createVideoSubTranslator, type DubDeps, type VideoSubsStrings } from './index';
 import { createYouTubeSite } from './sites/youtube';
@@ -216,7 +213,7 @@ describe('Thai dub in the player', () => {
 
   it('switches voice from the menu and keeps dubbing with it', async () => {
     const fetchCloudAudio = vi.fn(async () => 'data:x');
-    let settings: DubSettings = { ...DEFAULT_DUB_SETTINGS, voiceURI: 'el:brM9iIbwDREZaWL8luun' };
+    let settings: DubSettings = { ...DEFAULT_DUB_SETTINGS, voiceURI: 'oa:marin' };
     const { subs } = make({
       fetchCloudAudio,
       getSettings: () => settings,
@@ -227,12 +224,12 @@ describe('Thai dub in the player', () => {
     await flush();
     dubButton()!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
     const buttons = [...document.querySelectorAll<HTMLButtonElement>('.bt-dub-voices button')];
-    expect(buttons.map((b) => b.textContent)).toEqual(['Anna', 'Somchai']);
+    expect(buttons.map((b) => b.textContent)).toEqual(['♀ Marin', '♀ Coral', '♂ Cedar', '♂ Ash']);
     expect(buttons[0]!.getAttribute('aria-pressed')).toBe('true');
-    buttons[1]!.click();
+    buttons[2]!.click();
     await flush();
-    expect(settings.voiceURI).toBe('el:XLXcyPK1jTjw1pYLLcM9');
-    expect(buttons[1]!.getAttribute('aria-pressed')).toBe('true');
+    expect(settings.voiceURI).toBe('oa:cedar');
+    expect(buttons[2]!.getAttribute('aria-pressed')).toBe('true');
     expect(subs.isDubbing()).toBe(true);
   });
 });

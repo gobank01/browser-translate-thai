@@ -56,8 +56,9 @@ async function main() {
   const env = { WXT_THAI_DUB: '1' };
 
   // 1. Translation
-  say('1) แปลภาษา — ใส่ OpenRouter key ได้คำแปลดีกว่า (สมัครที่ https://openrouter.ai/keys)');
-  say('   ไม่ใส่ = ใช้ Google แปลฟรี');
+  say('1) OpenRouter key (แนะนำ) — ได้ทั้งคำแปลที่ลื่นกว่า และเสียงพากย์ไทยชาย/หญิงจาก GPT Audio Mini');
+  say('   ราว 1–2 บาทต่อคลิป 10 นาที · สมัครที่ https://openrouter.ai/keys');
+  say('   ไม่ใส่ = Google แปลฟรี + เสียงไทย Kanya ของ Mac ฟรี');
   const or = await ask('   OpenRouter key', old.WXT_OPENROUTER_KEY ? '(ใช้ของเดิม)' : '');
   const orKey = or === '(ใช้ของเดิม)' ? old.WXT_OPENROUTER_KEY : or;
   if (orKey) {
@@ -66,9 +67,9 @@ async function main() {
   }
 
   // 2. Voice
-  say('\n2) เสียงพากย์ — ใส่ ElevenLabs key ได้เสียงธรรมชาติ (เสียเครดิต, https://elevenlabs.io/app/settings/api-keys)');
+  say('\n2) (ไม่บังคับ) ElevenLabs key — เสียงพรีเมียมเพิ่มเติม แพงกว่า GPT ราว 30 เท่า (https://elevenlabs.io/app/settings/api-keys)');
   say('   ต้องเปิดสิทธิ์ Text to Speech และ Voices (read) ให้ key · เพิ่มเสียงไทยที่ชอบจาก Voice Library เข้าบัญชีก่อน');
-  say('   ไม่ใส่ = ใช้เสียงไทย "Kanya" ของ Mac ฟรี');
+  say('   ข้ามได้เลย ถ้าใส่ OpenRouter key แล้ว');
   const el = await ask('   ElevenLabs key', old.WXT_ELEVENLABS_KEY ? '(ใช้ของเดิม)' : '');
   const elKey = el === '(ใช้ของเดิม)' ? old.WXT_ELEVENLABS_KEY : el;
   if (elKey) {

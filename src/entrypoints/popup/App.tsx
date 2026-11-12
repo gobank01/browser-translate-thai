@@ -5,7 +5,7 @@ import { Shortcut } from '~/ui/components/Keycap';
 import { Globe, Route, Settings, Volume2 } from '~/ui/icons';
 import { SegmentedControl } from '~/ui/components/SegmentedControl';
 import { NumberControl } from '~/ui/components/NumberControl';
-import { CLOUD_PREFIX, CLOUD_TTS, CLOUD_VOICES } from '~/core/dub/cloudVoice';
+import { CLOUD_TTS, sameProviderVoices } from '~/core/dub/cloudVoice';
 import type { DubSettings } from '~/core/dub/settings';
 import { cn } from '~/lib/cn';
 import { useT } from '~/i18n';
@@ -151,8 +151,8 @@ export function App() {
               {CLOUD_TTS && (
                 <div class="mt-3 border-t border-ap-border/70 pt-3">
                   <SegmentedControl label={t('dubVoice')} value={settings.dub.voiceURI}
-                    options={CLOUD_VOICES.map((v) => ({
-                      value: CLOUD_PREFIX + v.id,
+                    options={sameProviderVoices(settings.dub.voiceURI).map((v) => ({
+                      value: v.uri,
                       label: `${t(v.gender === 'female' ? 'dubFemale' : 'dubMale')} · ${v.name}`,
                     }))}
                     onChange={(voiceURI) => void dub({ voiceURI })} />
