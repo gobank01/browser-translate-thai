@@ -4,6 +4,7 @@ vi.mock('~/messaging/client', () => ({
   translateBatch: vi.fn(async (req: { segments: string[] }) => req.segments.map((s) => `ไทย:${s}`)),
   abortTranslate: vi.fn(),
 }));
+vi.mock('./nativeAudio', () => ({ switchToNativeAudio: vi.fn(async () => 'none') }));
 vi.mock('./requestCaptionTracks', () => ({
   requestCaptionTracks: vi.fn(async () => ({
     source: 'bt-yt-captions-response',
@@ -24,6 +25,7 @@ vi.mock('~/core/dub/cloudVoice', async (orig) => {
 import { createVideoSubTranslator, type DubDeps, type VideoSubsStrings } from './index';
 import { createYouTubeSite } from './sites/youtube';
 import { fetchTranscript } from './fetchTranscript';
+import { switchToNativeAudio } from './nativeAudio';
 import { DEFAULT_SUBTITLE_POSITION, DEFAULT_SUBTITLE_STYLE } from '~/core/subtitles/style';
 import { DEFAULT_DUB_SETTINGS, type DubSettings } from '~/core/dub/settings';
 
@@ -34,6 +36,7 @@ const DUB_STRINGS: DubDeps['strings'] = {
   autoStarted: 'auto {lang}', stop: 'stop', uiLocale: 'th',
   statusLoading: 'loading', statusTranslating: 'translating {n}/{total}', statusVoicing: 'voicing {n}/{total}',
   statusReady: 'ready', statusHeld: 'held',
+  nativeSwitched: 'native switched', nativeAlready: 'native already', useOwnDub: 'own',
 };
 
 const KANYA = { name: 'Kanya', lang: 'th-TH', voiceURI: 'kanya', localService: true } as SpeechSynthesisVoice;
@@ -251,5 +254,27 @@ describe('Thai dub in the player', () => {
     expect(voiceForVideo).toHaveBeenCalled();
     subs.toggleDub();
     expect(document.querySelector('.bt-dub-status')).toBeNull();
+  });
+
+  it('plays the video\'s own Thai track instead of dubbing, and dubs on request', async () => {
+    vi.mocked(switchToNativeAudio).mockResolvedValueOnce('switched');
+    const { subs } = make();
+    await subs.attachButton();
+    await subs.toggleDub();
+    expect(subs.isDubbing()).toBe(false);
+    expect(toast()?.textContent).toContain('native switched');
+    toast()!.querySelector('button')!.click();
+    await flush();
+    expect(subs.isDubbing()).toBe(true);
+    expect(vi.mocked(switchToNativeAudio)).toHaveBeenCalledTimes(1); // the own dub does not ask again
+  });
+
+  it('does not dub over a video already playing Thai', async () => {
+    vi.mocked(switchToNativeAudio).mockResolvedValueOnce('already');
+    const { subs } = make({}, { autoStart: true });
+    await subs.attachButton();
+    await flush();
+    expect(subs.isDubbing()).toBe(false);
+    expect(toast()?.textContent).toContain('native already');
   });
 });

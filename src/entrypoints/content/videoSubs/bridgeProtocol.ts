@@ -2,6 +2,23 @@ export const BT_REQ = 'bt-yt-captions-request';
 export const BT_RES = 'bt-yt-captions-response';
 export const BT_FETCH_REQ = 'bt-yt-transcript-request';
 export const BT_FETCH_RES = 'bt-yt-transcript-response';
+/** Switch the player to its own audio track in a language (YouTube's dubs). */
+export const BT_AUDIO_REQ = 'bt-yt-audio-request';
+export const BT_AUDIO_RES = 'bt-yt-audio-response';
+
+export interface AudioTrackRequest {
+  source: typeof BT_AUDIO_REQ;
+  id: string;
+  /** Language code, e.g. 'th'. */
+  lang: string;
+}
+
+export interface AudioTrackResponse {
+  source: typeof BT_AUDIO_RES;
+  id: string;
+  /** 'already': that language is playing; 'switched': now it is; 'none': the video has no such track. */
+  result: 'already' | 'switched' | 'none';
+}
 
 export interface CaptionTrack {
   baseUrl: string;

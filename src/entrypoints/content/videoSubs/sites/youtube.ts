@@ -1,6 +1,7 @@
 import { requestCaptionTracks } from '../requestCaptionTracks';
 import { fetchTranscript, pickTrack } from '../fetchTranscript';
 import { fetchTranscriptText } from '../transcriptBridge';
+import { switchToNativeAudio } from '../nativeAudio';
 import type { CaptionsResponse } from '../bridgeProtocol';
 import type { SiteMatcher, SiteProbe, SubtitleSite } from '../site';
 import type { Cue } from '~/core/subtitles/types';
@@ -69,6 +70,8 @@ export function createYouTubeSite(): SubtitleSite {
       const asr = found.tracks.find((t) => t.kind === 'asr');
       return { kind: 'ready', languageCode: track.languageCode, spokenLanguage: asr?.languageCode };
     },
+
+    nativeAudio: (lang) => switchToNativeAudio(lang),
 
     async fetchTranscript(): Promise<Cue[]> {
       const found = await captions();

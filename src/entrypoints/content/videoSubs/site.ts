@@ -39,6 +39,11 @@ export interface SubtitleSite {
   probe(): Promise<SiteProbe>;
   /** The cues for the current media, once the reader has asked for them. */
   fetchTranscript(): Promise<Cue[]>;
+  /**
+   * Play the site's own audio track in `lang`, where the video has one — a dub
+   * YouTube or the creator attached. Sites without such tracks leave it out.
+   */
+  nativeAudio?(lang: string): Promise<'already' | 'switched' | 'none'>;
 }
 
 export interface SiteSelectors {

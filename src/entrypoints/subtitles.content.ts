@@ -232,6 +232,9 @@ export default defineContentScript({
             statusVoicing: t('dubStatusVoicing', locale),
             statusReady: t('dubStatusReady', locale),
             statusHeld: t('dubStatusHeld', locale),
+            nativeSwitched: t('dubNativeSwitched', locale),
+            nativeAlready: t('dubNativeAlready', locale),
+            useOwnDub: t('dubUseOwn', locale),
           },
         },
       });

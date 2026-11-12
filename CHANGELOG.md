@@ -2,6 +2,31 @@
 
 All notable changes will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.0] — 2026-11-12 · Thai dub
+
+The first numbered release of the Thai-dub fork (gobank01/browser-translate-thai).
+Everything since 0.2.3:
+
+### Added
+- **Thai dub.** Translated subtitles are spoken in sync with the video, the
+  original sound ducked. Voices: GPT Audio Mini through OpenRouter (female
+  Marin/Coral, male Cedar/Ash; each line checked against its transcript, with a
+  Gemini TTS fallback), ElevenLabs as an option, or the Mac's own voice for free.
+- **Starts by itself** on foreign-language videos (the spoken language is read
+  from YouTube's auto-captions), with a progress note on the video and the
+  video held until the dub is ready.
+- **YouTube's own Thai audio first.** A video that already has a Thai audio
+  track — YouTube's auto-dubs and creators' dubs — plays that instead: in sync
+  and free. One click still switches to our dub.
+- **Voice per channel.** The dub voice matches the channel's speaker (male or
+  female), decided once per channel and remembered; a voice picked on the video
+  overrides it for that channel.
+- TH button, Option+D, popup switch and volume buttons, settings card, Thai
+  interface language, spoken-style translation, on-disk audio cache.
+- Setup wizard (`node setup.mjs`) and a Thai guide (GUIDE-TH.md). Keys stay in
+  `.env.local` and are never committed.
+- Optional watch log written as notes on this Mac, with a recommender.
+
 ## [0.2.3] — 2026-11-09
 
 ### Added

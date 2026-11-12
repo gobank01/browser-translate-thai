@@ -46,6 +46,11 @@ export interface DubStrings extends DubUiStrings {
   stop: string;
   /** The interface language, for naming the video's language in it. */
   uiLocale: string;
+  /** The video has its own Thai track and we switched to it / it was already on. */
+  nativeSwitched: string;
+  nativeAlready: string;
+  /** Action: dub it ourselves anyway. */
+  useOwnDub: string;
   /** On-video progress. `{n}` / `{total}` are filled in. */
   statusLoading: string;
   statusTranslating: string;
@@ -88,7 +93,8 @@ export interface VideoSubTranslator {
   teardown: () => void;
   isOn: () => boolean;
   /** Turn the Thai dub on or off (the player button and Alt+D). */
-  toggleDub: () => Promise<void>;
+  /** `own`: use our dub even where the video has a Thai track of its own. */
+  toggleDub: (opts?: { own?: boolean }) => Promise<void>;
   isDubbing: () => boolean;
   /** The cues loaded for this video, with whatever has been translated so far. */
   transcript: () => Array<{ startMs: number; text: string; translation?: string }>;
@@ -342,7 +348,7 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     showDubToast(site.selectors, text, action);
   }
 
-  async function toggleDub(): Promise<void> {
+  async function toggleDub(opts: { own?: boolean } = {}): Promise<void> {
     const dub = deps.dub;
     if (!dub) return;
     if (dubbing) { stopDub(); return; }
@@ -357,6 +363,19 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     dubButton?.setState('preparing');
     hold();
     setDubStatus(site.selectors, { text: withHold(s.statusLoading) });
+    // A video with its own Thai track (YouTube's dubs) plays that instead:
+    // perfectly in time and free. The viewer can still ask for ours.
+    if (!opts.own && site.nativeAudio) {
+      const lang = deps.getTargetLang().toLowerCase().split('-')[0]!;
+      const native = await site.nativeAudio(lang).catch(() => 'none' as const);
+      if (!dubbing) return;
+      if (native !== 'none') {
+        stopDub();
+        dubToast(native === 'switched' ? s.nativeSwitched : s.nativeAlready,
+          { label: s.useOwnDub, run: () => { void toggleDub({ own: true }); } });
+        return;
+      }
+    }
     activeVoiceURI = (await dub.voiceForVideo?.().catch(() => null)) ?? dub.getSettings().voiceURI;
     if (!dubbing) return;
     // A cloud voice when one is chosen and this build can reach it; the

@@ -259,6 +259,9 @@ export const en = {
   dubStatusVoicing: 'Preparing the voice {n}/{total}',
   dubStatusReady: 'Thai dub ready',
   dubStatusHeld: 'paused until ready, plays by itself',
+  dubNativeSwitched: "Playing YouTube's own Thai audio (free, in sync) ·",
+  dubNativeAlready: 'This video is already playing Thai audio ·',
+  dubUseOwn: 'Use our dub instead',
 } as const;
 
 export type StringKey = keyof typeof en;

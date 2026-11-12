@@ -7,6 +7,10 @@ import {
   type TranscriptRequest,
   type TranscriptResponse,
   type VideoDetails,
+  BT_AUDIO_REQ,
+  BT_AUDIO_RES,
+  type AudioTrackRequest,
+  type AudioTrackResponse,
 } from './content/videoSubs/bridgeProtocol';
 
 /**
@@ -86,6 +90,37 @@ export default defineContentScript({
               '*',
             ),
           );
+        return;
+      }
+
+      // YouTube's own dubbed audio tracks. The track objects are minified, so
+      // the language is found by shape: the one property that holds an `id`
+      // like "th.3".
+      if (ds === BT_AUDIO_REQ) {
+        const { id, lang } = e.data as AudioTrackRequest;
+        const pl = document.getElementById('movie_player') as (HTMLElement & {
+          getAvailableAudioTracks?: () => unknown[];
+          getAudioTrack?: () => unknown;
+          setAudioTrack?: (t: unknown) => void;
+        }) | null;
+        const langOf = (track: unknown): string => {
+          for (const v of Object.values((track ?? {}) as Record<string, unknown>)) {
+            const inner = v as { id?: unknown } | null;
+            if (inner && typeof inner === 'object' && typeof inner.id === 'string' && /^[\w-]+\.\d+$/.test(inner.id)) {
+              return inner.id.split('.')[0]!.split('-')[0]!.toLowerCase();
+            }
+          }
+          return '';
+        };
+        let result: AudioTrackResponse['result'] = 'none';
+        try {
+          if (langOf(pl?.getAudioTrack?.()) === lang) result = 'already';
+          else {
+            const match = (pl?.getAvailableAudioTracks?.() ?? []).find((t) => langOf(t) === lang);
+            if (match && pl?.setAudioTrack) { pl.setAudioTrack(match); result = 'switched'; }
+          }
+        } catch { /* a player without the API: nothing to switch */ }
+        window.postMessage({ source: BT_AUDIO_RES, id, result } as AudioTrackResponse, '*');
         return;
       }
 

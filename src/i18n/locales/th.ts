@@ -242,4 +242,7 @@ export const th: Record<StringKey, string> = {
   dubStatusVoicing: 'กำลังเตรียมเสียงพากย์ {n}/{total}',
   dubStatusReady: 'พากย์ไทยพร้อมแล้ว',
   dubStatusHeld: 'หยุดรอสักครู่ เดี๋ยวเล่นต่อเอง',
+  dubNativeSwitched: 'ใช้เสียงพากย์ไทยของ YouTube (ฟรี ตรงจังหวะ) ·',
+  dubNativeAlready: 'คลิปนี้มีเสียงไทยของ YouTube อยู่แล้ว ·',
+  dubUseOwn: 'ใช้เสียงพากย์ของเราแทน',
 };
