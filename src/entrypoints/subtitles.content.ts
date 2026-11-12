@@ -14,7 +14,7 @@ import { PROVIDERS, type ProviderId } from '~/core/providers/registry';
 import type { AppData } from '~/storage/schema';
 import { DEFAULT_DUB_SETTINGS, type DubSettings } from '~/core/dub/settings';
 import { routeProblem } from '~/core/engines/routing';
-import type { CloudTtsRequest, CloudTtsResponse, OpenOptionsRequest } from '~/messaging/types';
+import type { ChannelVoiceRequest, CloudTtsRequest, CloudTtsResponse, OpenOptionsRequest, RememberVoiceRequest } from '~/messaging/types';
 import { CLOUD_TTS } from '~/core/dub/cloudVoice';
 import { startWatchTracker } from './content/watchTracker';
 import { requestCaptionTracks } from './content/videoSubs/requestCaptionTracks';
@@ -120,6 +120,8 @@ export default defineContentScript({
       subtitlePosition = data.settings.subtitlePosition;
       subtitleStyle = data.settings.subtitleStyle;
       dubSettings = data.settings.dub;
+      /** The channel of the video being dubbed, for remembering a voice picked for it. */
+      let channelId = '';
       const subtitleReady = routeProblem(data.settings.engines.subtitle, data.providers) === null;
 
       subs = createVideoSubTranslator({
@@ -175,6 +177,29 @@ export default defineContentScript({
             void client.patchSettings({ dub: dubSettings });
           },
           hasEngine: () => subtitleReady,
+          // YouTube with cloud voices: a voice that matches the channel's speaker.
+          ...(CLOUD_TTS && site.id === 'youtube' && {
+            voiceForVideo: async () => {
+              const { details } = await requestCaptionTracks();
+              const videoId = new URLSearchParams(location.search).get('v');
+              if (!details || details.videoId !== videoId) return null;
+              channelId = details.channelId;
+              const req: ChannelVoiceRequest = {
+                type: 'dub:voice',
+                current: dubSettings.voiceURI,
+                video: {
+                  channelId: details.channelId, channel: details.author,
+                  title: details.title, description: details.shortDescription,
+                },
+              };
+              const res = await chrome.runtime.sendMessage(req) as { voiceURI: string | null } | undefined;
+              return res?.voiceURI ?? null;
+            },
+            rememberVoice: (voiceURI: string) => {
+              const req: RememberVoiceRequest = { type: 'dub:remember', channelId, voiceURI };
+              try { void chrome.runtime.sendMessage(req).catch(() => {}); } catch { /* extension reloaded */ }
+            },
+          }),
           ...(CLOUD_TTS && {
             fetchCloudAudio: async (text: string, voiceId: string) => {
               const req: CloudTtsRequest = { type: 'tts:cloud', text, voiceId };
@@ -202,6 +227,11 @@ export default defineContentScript({
             autoStarted: t('dubAutoToast', locale),
             stop: t('dubStop', locale),
             uiLocale: locale,
+            statusLoading: t('dubStatusLoading', locale),
+            statusTranslating: t('dubStatusTranslating', locale),
+            statusVoicing: t('dubStatusVoicing', locale),
+            statusReady: t('dubStatusReady', locale),
+            statusHeld: t('dubStatusHeld', locale),
           },
         },
       });

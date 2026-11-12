@@ -32,6 +32,8 @@ const DUB_STRINGS: DubDeps['strings'] = {
   titleOff: 'dub off', titleOn: 'dub on', preparing: 'preparing', clipVolume: 'clip', rate: 'rate', dubVolume: 'dubvol',
   noSubs: 'no subs', noVoice: 'no voice', noVoiceHelp: 'how', noEngine: 'no engine', openSettings: 'settings',
   autoStarted: 'auto {lang}', stop: 'stop', uiLocale: 'th',
+  statusLoading: 'loading', statusTranslating: 'translating {n}/{total}', statusVoicing: 'voicing {n}/{total}',
+  statusReady: 'ready', statusHeld: 'held',
 };
 
 const KANYA = { name: 'Kanya', lang: 'th-TH', voiceURI: 'kanya', localService: true } as SpeechSynthesisVoice;
@@ -231,5 +233,23 @@ describe('Thai dub in the player', () => {
     expect(settings.voiceURI).toBe('oa:cedar');
     expect(buttons[2]!.getAttribute('aria-pressed')).toBe('true');
     expect(subs.isDubbing()).toBe(true);
+  });
+
+  it('holds a playing video with a progress note, and asks the channel for its voice', async () => {
+    const voiceForVideo = vi.fn(async () => 'oa:cedar');
+    const { subs } = make({ voiceForVideo, fetchCloudAudio: vi.fn(async () => 'data:x') }, { voiceURI: 'oa:marin' });
+    const v = video() as HTMLVideoElement & { paused: boolean };
+    Object.defineProperty(v, 'paused', { value: false, writable: true, configurable: true });
+    v.pause = vi.fn(() => { v.paused = true; });
+    await subs.attachButton();
+    const started = subs.toggleDub();
+    expect(v.pause).toHaveBeenCalled();
+    expect(document.querySelector('.bt-dub-status')?.textContent).toContain('loading');
+    expect(document.querySelector('.bt-dub-status')?.textContent).toContain('held');
+    await started;
+    await flush();
+    expect(voiceForVideo).toHaveBeenCalled();
+    subs.toggleDub();
+    expect(document.querySelector('.bt-dub-status')).toBeNull();
   });
 });

@@ -17,9 +17,17 @@ import { selectionSystemPrompt } from '~/core/selection/prompt';
 import { InvalidModelOutputError, responseCachePrompt, runSelection, SelectionStreamGate, validateSelectionResult, type ResultFormat } from '~/core/selection/response';
 import { resolveBasePrompt } from '~/core/prompt/templates';
 import { batchSystemPrompt, batchUserPrompt } from '~/core/batch/prompt';
-import { PERSONAL_BUILD } from '~/storage/personalPreset';
 import { clipKey, getClip, putClip } from '~/core/dub/audioCache';
 import { modelFor, synthesize } from '~/core/dub/cloudTts';
+import { guessGender, rememberChannelVoice, voiceForChannel, type ChannelVoices } from '~/core/dub/channelVoice';
+import { PERSONAL_BUILD, PRESET_MODEL } from '~/storage/personalPreset';
+
+/** Per-channel dub voices, kept apart from app:data so changing one rebuilds nothing. */
+const CHANNELS_KEY = 'dub:channels';
+const channelStore = {
+  load: async () => ((await chrome.storage.local.get(CHANNELS_KEY))[CHANNELS_KEY] ?? {}) as ChannelVoices,
+  save: (all: ChannelVoices) => chrome.storage.local.set({ [CHANNELS_KEY]: all }),
+};
 import { parseBatchArray } from '~/core/batch/parse';
 import { runBatch } from '~/core/batch/runBatch';
 import { languageName, normalizeTargetLanguage } from '~/core/language/targets';
@@ -60,6 +68,18 @@ export default defineBackground(() => {
   const activeAborts = new Map<string, AbortController>();
 
   chrome.runtime.onMessage.addListener((msg: Request, _sender, sendResponse) => {
+    if (msg.type === 'dub:voice') {
+      const key = import.meta.env.WXT_OPENROUTER_KEY;
+      void voiceForChannel(msg.video, msg.current, {
+        ...channelStore,
+        guess: (video) => (key ? guessGender(video, key, PRESET_MODEL) : Promise.resolve(undefined)),
+      }).then((voiceURI) => sendResponse({ voiceURI }), () => sendResponse({ voiceURI: null }));
+      return true; // async response
+    }
+    if (msg.type === 'dub:remember') {
+      void rememberChannelVoice(msg.channelId, msg.voiceURI, channelStore);
+      return false;
+    }
     if (msg.type === 'watch:log') {
       // Written into a folder of notes by a native host on this Mac
       // (watchlog/). Without the host installed this quietly fails.

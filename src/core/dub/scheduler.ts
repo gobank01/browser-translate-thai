@@ -129,7 +129,21 @@ export interface DubScheduler {
   /** Call often (every animation frame): starts the line under the playhead. */
   tick: () => void;
   stop: () => void;
+  /** How ready the next few lines are — for the on-video status. */
+  readiness: () => DubReadiness;
 }
+
+export interface DubReadiness {
+  /** Lines looked at: the next few from the playhead. */
+  total: number;
+  translated: number;
+  /** Translated and with audio to hand (always = translated for a system voice). */
+  voiced: number;
+  ready: boolean;
+}
+
+/** How many upcoming lines must be ready before the dub counts as ready. */
+export const READY_LINES = 3;
 
 export function createDubScheduler(deps: DubSchedulerDeps): DubScheduler {
   const { synth, video, lines } = deps;
@@ -154,12 +168,13 @@ export function createDubScheduler(deps: DubSchedulerDeps): DubScheduler {
   video.addEventListener('seeking', interrupt);
 
   function tick(): void {
+    const now = video.currentTime * 1000;
+    // Fetch ahead even while paused: that is when the viewer is waiting for it.
+    if (deps.engine) prepareAhead(now, deps.engine);
     if (video.paused || video.seeking) {
       if (talking) interrupt();
       return;
     }
-    const now = video.currentTime * 1000;
-    if (deps.engine) prepareAhead(now, deps.engine);
     const idx = lineAt(now, lines);
     if (idx < 0 || idx === spoken) return;
     const line = lines[idx]!;
@@ -206,11 +221,25 @@ export function createDubScheduler(deps: DubSchedulerDeps): DubScheduler {
     }
   }
 
+  function readiness(): DubReadiness {
+    const now = video.currentTime * 1000;
+    const next = lines.slice(firstLineFrom(now, lines), firstLineFrom(now, lines) + READY_LINES);
+    let translated = 0;
+    let voiced = 0;
+    for (const line of next) {
+      const text = deps.getText(line);
+      if (text === null) continue;
+      translated++;
+      if (!text || !deps.engine || deps.engine.ready(text)) voiced++;
+    }
+    return { total: next.length, translated, voiced, ready: voiced === next.length };
+  }
+
   function stop(): void {
     video.removeEventListener('pause', interrupt);
     video.removeEventListener('seeking', interrupt);
     silence();
   }
 
-  return { tick, stop };
+  return { tick, stop, readiness };
 }

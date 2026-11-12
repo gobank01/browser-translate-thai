@@ -253,4 +253,9 @@ export const fr: Record<StringKey, string> = {
   dubStop: 'Turn off',
   dubPopupTitle: 'Automatic Thai dub',
   dubPopupDesc: 'Hear foreign-language videos in Thai as soon as they open',
+  dubStatusLoading: 'Loading captions…',
+  dubStatusTranslating: 'Translating {n}/{total}',
+  dubStatusVoicing: 'Preparing the voice {n}/{total}',
+  dubStatusReady: 'Thai dub ready',
+  dubStatusHeld: 'paused until ready, plays by itself',
 };

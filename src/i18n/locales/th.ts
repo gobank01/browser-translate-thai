@@ -237,4 +237,9 @@ export const th: Record<StringKey, string> = {
   dubStop: 'ปิด',
   dubPopupTitle: 'พากย์ไทยอัตโนมัติ',
   dubPopupDesc: 'เปิดคลิปภาษาต่างประเทศ แล้วได้ยินเสียงไทยทันที',
+  dubStatusLoading: 'กำลังโหลดซับ…',
+  dubStatusTranslating: 'กำลังแปล {n}/{total}',
+  dubStatusVoicing: 'กำลังเตรียมเสียงพากย์ {n}/{total}',
+  dubStatusReady: 'พากย์ไทยพร้อมแล้ว',
+  dubStatusHeld: 'หยุดรอสักครู่ เดี๋ยวเล่นต่อเอง',
 };

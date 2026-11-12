@@ -11,7 +11,7 @@ import type { Cue } from '~/core/subtitles/types';
 import type { SubtitlePosition, SubtitleStyle } from '~/core/subtitles/style';
 import { translateBatch, abortTranslate } from '~/messaging/client';
 import type { TranslateBatchRequest } from '~/messaging/types';
-import { mountDubButton, removeDubButton, showDubToast, type DubButtonHandle, type DubUiStrings } from './dubUi';
+import { mountDubButton, removeDubButton, setDubStatus, showDubToast, type DubButtonHandle, type DubUiStrings } from './dubUi';
 import { createDubScheduler, mergeCues, type DubScheduler, type DubLine } from '~/core/dub/scheduler';
 import { createDucker, type Ducker } from '~/core/dub/ducking';
 import { loadVoices, pickVoice } from '~/core/dub/voice';
@@ -46,6 +46,13 @@ export interface DubStrings extends DubUiStrings {
   stop: string;
   /** The interface language, for naming the video's language in it. */
   uiLocale: string;
+  /** On-video progress. `{n}` / `{total}` are filled in. */
+  statusLoading: string;
+  statusTranslating: string;
+  statusVoicing: string;
+  statusReady: string;
+  /** Appended while the video is held until the dub is ready. */
+  statusHeld: string;
   noSubs: string;
   noVoice: string;
   noVoiceHelp: string;
@@ -63,6 +70,13 @@ export interface DubDeps {
   strings: DubStrings;
   /** Overridable for tests. */
   synth?: SpeechSynthesis;
+  /**
+   * The voice for the video now open — e.g. one matching the channel's speaker
+   * — or null to use the voice in settings.
+   */
+  voiceForVideo?: () => Promise<string | null>;
+  /** The viewer picked `voiceURI` from the player menu: keep it for this video's channel. */
+  rememberVoice?: (voiceURI: string) => void;
   /** Fetch a cloud voice's audio for one line (absent: system voices only). */
   fetchCloudAudio?: (text: string, voiceId: string) => Promise<string>;
 }
@@ -79,6 +93,11 @@ export interface VideoSubTranslator {
   /** The cues loaded for this video, with whatever has been translated so far. */
   transcript: () => Array<{ startMs: number; text: string; translation?: string }>;
 }
+
+/** Longest the video is held waiting for the dub before it plays regardless. */
+const HOLD_MAX_MS = 20_000;
+/** How long "ready" stays on screen. */
+const READY_NOTE_MS = 1500;
 
 export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSubTranslator {
   const { site } = deps;
@@ -99,6 +118,14 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
   let duckedAt = -1;
   /** Live volume control for the line playing now (cloud voices only). */
   let setDubVolume: ((v: number) => void) | null = null;
+  /** The voice the dub is speaking with now (may differ from settings: per channel). */
+  let activeVoiceURI = '';
+  /** The video was paused by us to wait for the dub; it is resumed when ready. */
+  let holding = false;
+  let holdUntil = 0;
+  let lastStatusAt = 0;
+  /** When the "ready" note went up, so it can come down again. */
+  let readySince = 0;
   let dubVolumeAt = -1;
 
   function currentTimeMs(): number {
@@ -151,6 +178,7 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
       if (vol !== dubVolumeAt) { setDubVolume?.(vol / 100); dubVolumeAt = vol; }
       dubScheduler.tick();
     }
+    if (dubbing) updateStatus();
     rafId = requestAnimationFrame(tick);
   }
 
@@ -272,14 +300,20 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
       dubButton = mountDubButton(site.button, site.selectors, {
         strings: dub.strings,
         onToggle: () => { void toggleDub(); },
-        getMenuValues: () => dub.getSettings(),
+        getMenuValues: () => ({ ...dub.getSettings(), voiceURI: activeVoiceURI || dub.getSettings().voiceURI }),
         voices: dub.fetchCloudAudio
           ? sameProviderVoices(dub.getSettings().voiceURI).map((v) => ({ value: v.uri, label: `${v.gender === 'female' ? '♀' : '♂'} ${v.name}` }))
           : [],
-        onMenuChange: (patch) => {
-          dub.setSettings(patch);
+        onMenuChange: ({ voiceURI, ...rest }) => {
+          if (Object.keys(rest).length) dub.setSettings(rest);
+          if (!voiceURI) return;
+          // A voice picked on the video is this channel's voice from now on;
+          // the default in settings stays as it was.
+          if (dub.rememberVoice) dub.rememberVoice(voiceURI);
+          else dub.setSettings({ voiceURI });
+          activeVoiceURI = voiceURI;
           // A new voice takes over from the next line on.
-          if (patch.voiceURI && dubbing) { stopDub(); void toggleDub(); }
+          if (dubbing) { stopDub(); void toggleDub(); }
         },
       });
       dubButton?.setState(dubbing ? 'on' : 'off');
@@ -317,9 +351,17 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
       dubToast(s.noEngine, { label: s.openSettings, run: () => dub.openSettings('translation') });
       return;
     }
+    // Hold the video until the first lines can be heard, so the viewer is not
+    // left wondering when to press play.
+    dubbing = true;
+    dubButton?.setState('preparing');
+    hold();
+    setDubStatus(site.selectors, { text: withHold(s.statusLoading) });
+    activeVoiceURI = (await dub.voiceForVideo?.().catch(() => null)) ?? dub.getSettings().voiceURI;
+    if (!dubbing) return;
     // A cloud voice when one is chosen and this build can reach it; the
     // computer's own voices otherwise.
-    const cloudId = dub.fetchCloudAudio ? cloudVoiceId(dub.getSettings().voiceURI) : null;
+    const cloudId = dub.fetchCloudAudio ? cloudVoiceId(activeVoiceURI) : null;
     let synth: SpeechEngine | undefined;
     let engine: PreparedEngine | undefined;
     let voice: SpeechSynthesisVoice | null = null;
@@ -333,17 +375,16 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     } else {
       const system = dub.synth ?? globalThis.speechSynthesis;
       voice = system
-        ? pickVoice(await loadVoices(system), dub.getSettings().voiceURI, deps.getTargetLang())
+        ? pickVoice(await loadVoices(system), activeVoiceURI, deps.getTargetLang())
         : null;
       if (!system || !voice) {
+        stopDub();
         dubToast(s.noVoice, { label: s.noVoiceHelp, run: () => dub.openSettings('video') });
         return;
       }
       synth = system;
       lang = voice.lang;
     }
-    dubbing = true;
-    dubButton?.setState('preparing');
     if (!on) await enable();
     // enable() switches itself off when there is nothing to translate.
     if (!on) { stopDub(); dubToast(s.noSubs); return; }
@@ -379,7 +420,60 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     });
   }
 
+  function hold(): void {
+    const video = site.findVideo();
+    if (!video || video.paused) return;
+    holding = true;
+    holdUntil = Date.now() + HOLD_MAX_MS;
+    video.pause();
+  }
+
+  function release(): void {
+    if (!holding) return;
+    holding = false;
+    try {
+      void Promise.resolve(site.findVideo()?.play()).catch(() => {});
+    } catch { /* a player that will not play is the viewer's to start */ }
+  }
+
+  function withHold(text: string): string {
+    return holding ? `${text} · ${deps.dub!.strings.statusHeld}` : text;
+  }
+
+  /** Keep the on-video status current; a few times a second is plenty. */
+  function updateStatus(): void {
+    const now = Date.now();
+    if (now - lastStatusAt < 250) return;
+    lastStatusAt = now;
+    const s = deps.dub!.strings;
+    if (!dubScheduler) {
+      setDubStatus(site.selectors, { text: withHold(s.statusLoading) });
+      return;
+    }
+    const r = dubScheduler.readiness();
+    if (r.ready || (holding && now > holdUntil)) {
+      release();
+      if (!readySince) {
+        readySince = now;
+        setDubStatus(site.selectors, { text: s.statusReady, tone: 'ready' });
+      } else if (now - readySince > READY_NOTE_MS) {
+        setDubStatus(site.selectors, null);
+      }
+      return;
+    }
+    readySince = 0;
+    const fill = (t: string, n: number) => t.replace('{n}', String(n)).replace('{total}', String(r.total));
+    const text = r.translated < r.total ? fill(s.statusTranslating, r.translated) : fill(s.statusVoicing, r.voiced);
+    setDubStatus(site.selectors, {
+      text: withHold(text),
+      progress: r.total ? (r.translated + r.voiced) / (2 * r.total) : 0,
+    });
+  }
+
   function stopDub(): void {
+    release();
+    readySince = 0;
+    setDubStatus(site.selectors, null);
     dubScheduler?.stop();
     dubScheduler = null;
     ducker?.restore();

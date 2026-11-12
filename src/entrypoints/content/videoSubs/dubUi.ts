@@ -58,6 +58,14 @@ const CSS = `
 @keyframes bt-dub-spin{to{transform:rotate(360deg)}}
 @keyframes bt-dub-wave{0%,100%{opacity:1}50%{opacity:0.35}}
 @media (prefers-reduced-motion:reduce){.${BTN_CLASS} *{animation:none!important}}
+.bt-dub-status{position:absolute;left:12px;top:12px;z-index:2147483000;display:flex;align-items:center;gap:8px;
+  max-width:min(460px,85%);padding:8px 12px;border-radius:999px;background:rgb(0 0 0 / 0.78);color:#fff;
+  font:500 14px/1.3 Roboto,Arial,sans-serif;pointer-events:none;transition:opacity 300ms}
+.bt-dub-status[data-tone=ready]{background:rgb(22 101 52 / 0.9)}
+.bt-dub-status .bar{width:64px;height:4px;border-radius:2px;background:rgb(255 255 255 / 0.25);overflow:hidden;flex:none}
+.bt-dub-status .bar i{display:block;height:100%;background:#3ea6ff;transition:width 300ms}
+.bt-dub-status .spin{width:12px;height:12px;border:2px solid rgb(255 255 255 / 0.35);border-top-color:#fff;
+  border-radius:50%;flex:none;animation:bt-dub-spin 0.9s linear infinite}
 .bt-dub-toast{position:absolute;left:12px;bottom:64px;z-index:2147483000;max-width:min(420px,80%);
   padding:8px 12px;border-radius:8px;background:rgb(0 0 0 / 0.85);color:#fff;
   font:500 14px/1.4 Roboto,Arial,sans-serif;pointer-events:auto}
@@ -241,4 +249,46 @@ export function showDubToast(selectors: SiteSelectors, text: string, action?: To
   toast.addEventListener('click', (e) => e.stopPropagation());
   player.appendChild(toast);
   setTimeout(() => toast.remove(), TOAST_MS);
+}
+
+export interface DubStatus {
+  text: string;
+  /** 0–1 for a progress bar; omitted for an indefinite wait. */
+  progress?: number;
+  tone?: 'busy' | 'ready';
+}
+
+/**
+ * The dub's progress, top-left on the picture: loading captions, translating,
+ * preparing the voice, ready. Null clears it. Announced politely to screen
+ * readers; the element itself is not interactive.
+ */
+export function setDubStatus(selectors: SiteSelectors, status: DubStatus | null): void {
+  const player = document.querySelector<HTMLElement>(selectors.player);
+  let el = player?.querySelector<HTMLElement>('.bt-dub-status') ?? null;
+  if (!status) { el?.remove(); return; }
+  if (!player) return;
+  ensureStyle();
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'bt-dub-status';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.append(document.createElement('span'), document.createElement('span'), document.createElement('span'));
+    player.appendChild(el);
+  }
+  const tone = status.tone ?? 'busy';
+  el.dataset.tone = tone;
+  const [icon, label, bar] = el.children as unknown as [HTMLElement, HTMLElement, HTMLElement];
+  icon.className = tone === 'busy' ? 'spin' : '';
+  icon.textContent = tone === 'ready' ? '✓' : '';
+  if (label.textContent !== status.text) label.textContent = status.text;
+  if (status.progress === undefined) {
+    bar.className = '';
+    bar.replaceChildren();
+  } else {
+    bar.className = 'bar';
+    if (!bar.firstChild) bar.appendChild(document.createElement('i'));
+    (bar.firstChild as HTMLElement).style.width = `${Math.round(Math.min(1, Math.max(0, status.progress)) * 100)}%`;
+  }
 }

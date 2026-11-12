@@ -132,7 +132,24 @@ export interface WatchLogRequest {
   record: import('~/core/watchlog/watchLog').WatchRecord;
 }
 
+/** Content script → background: the dub voice for this video's channel. */
+export interface ChannelVoiceRequest {
+  type: 'dub:voice';
+  video: import('~/core/dub/channelVoice').VideoInfo;
+  /** The default voice in settings. */
+  current: string;
+}
+
+/** Content script → background: the viewer picked this voice for the channel. */
+export interface RememberVoiceRequest {
+  type: 'dub:remember';
+  channelId: string;
+  voiceURI: string;
+}
+
 export type Request =
+  | ChannelVoiceRequest
+  | RememberVoiceRequest
   | WatchLogRequest
   | CloudTtsRequest
   | OpenOptionsRequest
