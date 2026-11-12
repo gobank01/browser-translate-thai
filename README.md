@@ -2,6 +2,7 @@
   <img src="./assets/banner.png" alt="BrowserTranslate — privacy-first browser translation" width="900">
 </p>
 <h1 align="center">BrowserTranslate</h1>
+<p align="center"><strong>🇹🇭 <a href="./GUIDE-TH.md">พากย์ไทยอัตโนมัติสำหรับคลิปต่างประเทศ — อ่านคู่มือติดตั้งภาษาไทย</a></strong></p>
 <p align="center">
   <strong>Read webpages and subtitles with the model you choose.</strong><br>
   Open-source browser translation · Bring your own key · No relay · No telemetry
