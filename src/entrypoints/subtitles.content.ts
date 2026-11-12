@@ -185,7 +185,7 @@ export default defineContentScript({
           }),
           openSettings: (tab) => {
             const req: OpenOptionsRequest = { type: 'options:open', tab };
-            void chrome.runtime.sendMessage(req).catch(() => {});
+            try { void chrome.runtime.sendMessage(req).catch(() => {}); } catch { /* extension reloaded */ }
           },
           strings: {
             titleOff: t('dubButtonTitle', locale),
@@ -212,7 +212,7 @@ export default defineContentScript({
 
     // Opt-in at setup: keep a log of what was watched, as notes on this Mac.
     if (import.meta.env.WXT_WATCHLOG && window.top === window && location.hostname.endsWith('youtube.com')) {
-      startWatchTracker({
+      const stopWatching = startWatchTracker({
         findVideo: () => document.querySelector<HTMLVideoElement>('video.html5-main-video, video'),
         mediaKey: () => (location.pathname === '/watch' && new URLSearchParams(location.search).get('v')) || '',
         transcript: () => subs?.transcript() ?? [],
@@ -222,21 +222,34 @@ export default defineContentScript({
           return { details: res.details, language: res.tracks.find((t) => t.kind === 'asr')?.languageCode };
         },
         send: (record) => {
+          // After the extension is reloaded or removed, this copy of the
+          // script lives on in the open tab with no extension behind it, and
+          // sendMessage throws outright — which Chrome lists as an extension
+          // error. Stop instead.
+          if (!chrome.runtime?.id) { stopWatching(); return; }
           const req: WatchLogRequest = { type: 'watch:log', record };
-          void chrome.runtime.sendMessage(req).catch(() => {});
+          try {
+            void chrome.runtime.sendMessage(req).catch(() => {});
+          } catch {
+            stopWatching();
+          }
         },
       });
     }
 
     // YouTube's own SPA-navigation event. No other site we handle needs one,
     // and listening for it elsewhere costs nothing.
-    window.addEventListener('yt-navigate-finish', () => { void reattach(); });
+    window.addEventListener('yt-navigate-finish', () => {
+      // A copy left behind by a reloaded extension has nothing to talk to.
+      if (!chrome.runtime?.id) return;
+      void reattach();
+    });
 
     // Alt+D turns the Thai dub on and off. Matched on the physical key: on a Mac
     // Option+D types "∂", so `key` would never be "d".
     window.addEventListener('keydown', (e) => {
       if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.code !== 'KeyD') return;
-      if (!subs || !dubSettings.enabled || isTyping(e.target)) return;
+      if (!subs || !dubSettings.enabled || isTyping(e.target) || !chrome.runtime?.id) return;
       e.preventDefault();
       e.stopPropagation();
       void subs.toggleDub();

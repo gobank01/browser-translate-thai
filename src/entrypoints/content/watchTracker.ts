@@ -81,7 +81,10 @@ export function startWatchTracker(deps: WatchTrackerDeps): () => void {
   const timer = setInterval(sample, SAMPLE_MS);
   const onHide = () => flush();
   window.addEventListener('pagehide', onHide);
+  let stopped = false;
   return () => {
+    if (stopped) return;
+    stopped = true;
     clearInterval(timer);
     window.removeEventListener('pagehide', onHide);
     video?.removeEventListener('seeking', onSeek);
