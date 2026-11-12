@@ -45,3 +45,4 @@ Thumbs.db
 # Local-only docs and agent context
 docs/
 CLAUDE.md
+watchlog/config.json

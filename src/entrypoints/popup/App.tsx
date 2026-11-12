@@ -2,7 +2,11 @@ import { useEffect, useState } from 'preact/hooks';
 import { useAppStore } from '~/storage/store';
 import { Switch } from '~/ui/components/Switch';
 import { Shortcut } from '~/ui/components/Keycap';
-import { Globe, Route, Settings } from '~/ui/icons';
+import { Globe, Route, Settings, Volume2 } from '~/ui/icons';
+import { SegmentedControl } from '~/ui/components/SegmentedControl';
+import { NumberControl } from '~/ui/components/NumberControl';
+import { CLOUD_PREFIX, CLOUD_TTS, CLOUD_VOICES } from '~/core/dub/cloudVoice';
+import type { DubSettings } from '~/core/dub/settings';
 import { cn } from '~/lib/cn';
 import { useT } from '~/i18n';
 import { useApplyTheme } from '~/ui/useApplyTheme';
@@ -124,6 +128,52 @@ export function App() {
             {hotkeyMode && <span class="ml-auto shrink-0"><Shortcut combo={settings.fullPageHotkey} /></span>}
           </div>
         </section>
+
+        {/* The dub: on for every foreign video, and whose voice. */}
+        {settings.dub.enabled && (() => {
+          const dub = (patch: Partial<DubSettings>) => updateSettings({ dub: { ...settings.dub, ...patch } });
+          const on = settings.dub.autoStart;
+          return (
+            <section class={cn('rounded-[10px] border p-4 transition-colors',
+              on ? 'border-ap-brand/40 bg-ap-brand/[0.06]' : 'border-ap-border bg-ap-surface')}>
+              <div class="flex items-center gap-3">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ap-border bg-ap-bg text-ap-muted">
+                  <Volume2 size={18} />
+                </span>
+                <div class="min-w-0 flex-1">
+                  <div class="text-sm font-medium">{t('dubPopupTitle')}</div>
+                  <div class="text-xs text-ap-muted">{t('dubPopupDesc')}</div>
+                </div>
+                <div class="shrink-0 scale-125">
+                  <Switch checked={on} onChange={(autoStart) => void dub({ autoStart })} label={t('dubPopupTitle')} hideLabel />
+                </div>
+              </div>
+              {CLOUD_TTS && (
+                <div class="mt-3 border-t border-ap-border/70 pt-3">
+                  <SegmentedControl label={t('dubVoice')} value={settings.dub.voiceURI}
+                    options={CLOUD_VOICES.map((v) => ({
+                      value: CLOUD_PREFIX + v.id,
+                      label: `${t(v.gender === 'female' ? 'dubFemale' : 'dubMale')} · ${v.name}`,
+                    }))}
+                    onChange={(voiceURI) => void dub({ voiceURI })} />
+                </div>
+              )}
+              {/* Louder / quieter, for the dub and for the video under it. */}
+              <div class="mt-3 space-y-2 border-t border-ap-border/70 pt-3">
+                {(['volume', 'duckVolume'] as const).map((key) => (
+                  <div key={key} class="flex items-center justify-between gap-3">
+                    <span class="text-xs text-ap-muted">{t(key === 'volume' ? 'dubVolume' : 'dubClipVolume')}</span>
+                    <div class="w-32 shrink-0">
+                      <NumberControl label={t(key === 'volume' ? 'dubVolume' : 'dubClipVolume')}
+                        value={settings.dub[key]} min={0} max={100} step={10}
+                        onPreview={() => {}} onCommit={(v) => void dub({ [key]: v })} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
 
         <LanguageSelect value={settings.targetLanguage} onChange={(value) => updateSettings({ targetLanguage: value })} />
 

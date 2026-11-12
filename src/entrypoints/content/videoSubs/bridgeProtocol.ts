@@ -17,6 +17,18 @@ export interface CaptionsResponse {
   tracks: CaptionTrack[];
   activeVssId?: string;        // vssId of the caption track the user currently has displayed
   activeLanguageCode?: string; // languageCode of the active track
+  /** What the video is, for the personal watch log. */
+  details?: VideoDetails;
+}
+
+export interface VideoDetails {
+  videoId: string;
+  title: string;
+  author: string;
+  channelId: string;
+  lengthSeconds: number;
+  keywords: string[];
+  shortDescription: string;
 }
 
 /** Ask the MAIN-world bridge for the captured (pot-bearing) transcript of a language. */

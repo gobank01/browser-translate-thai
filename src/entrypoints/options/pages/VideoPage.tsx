@@ -8,6 +8,7 @@ import { ColorControl } from '~/ui/components/ColorControl';
 import { SegmentedControl } from '~/ui/components/SegmentedControl';
 import { useLocale, useT } from '~/i18n';
 import { Captions, RotateCcw } from '~/ui/icons';
+import { DubCard } from './DubCard';
 import {
   DEFAULT_SUBTITLE_STYLE, SUBTITLE_FONT_FAMILY_IDS, SUBTITLE_FONT_FAMILIES,
   MIN_SUBTITLE_FONT_SCALE, MAX_SUBTITLE_FONT_SCALE,
@@ -139,6 +140,7 @@ export function VideoPage() {
             onPreview={(color) => textStyle(which, { color }, false)} onCommit={(color) => textStyle(which, { color })} />)}
         </div>
       </section>
+      <DubCard />
       {saveError && <p role="alert" class="text-sm text-ap-danger">{t('promptSaveFailed')}</p>}
     </div>
   );

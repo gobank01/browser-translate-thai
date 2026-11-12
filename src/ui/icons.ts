@@ -43,4 +43,5 @@ export {
   AppWindow,
   Globe,
   Info,
+  Volume2,
 } from 'lucide-preact';

@@ -12,6 +12,13 @@ import { resolveLocale, t } from '~/i18n';
 import type { Locale } from '~/i18n/strings';
 import { PROVIDERS, type ProviderId } from '~/core/providers/registry';
 import type { AppData } from '~/storage/schema';
+import { DEFAULT_DUB_SETTINGS, type DubSettings } from '~/core/dub/settings';
+import { routeProblem } from '~/core/engines/routing';
+import type { CloudTtsRequest, CloudTtsResponse, OpenOptionsRequest } from '~/messaging/types';
+import { CLOUD_TTS } from '~/core/dub/cloudVoice';
+import { startWatchTracker } from './content/watchTracker';
+import { requestCaptionTracks } from './content/videoSubs/requestCaptionTracks';
+import type { WatchLogRequest } from '~/messaging/types';
 
 /**
  * Subtitle translation, in every frame.
@@ -97,6 +104,7 @@ export default defineContentScript({
     let targetLanguage = 'zh-CN';
     let subtitlePosition: SubtitlePosition = DEFAULT_SUBTITLE_POSITION;
     let subtitleStyle: SubtitleStyle = DEFAULT_SUBTITLE_STYLE;
+    let dubSettings: DubSettings = DEFAULT_DUB_SETTINGS;
     let subs: VideoSubTranslator | null = null;
 
     async function reattach() {
@@ -111,6 +119,8 @@ export default defineContentScript({
       targetLanguage = data.settings.targetLanguage;
       subtitlePosition = data.settings.subtitlePosition;
       subtitleStyle = data.settings.subtitleStyle;
+      dubSettings = data.settings.dub;
+      const subtitleReady = routeProblem(data.settings.engines.subtitle, data.providers) === null;
 
       subs = createVideoSubTranslator({
         site,
@@ -158,15 +168,79 @@ export default defineContentScript({
           back: t('back', locale),
         },
         notify: (msg) => console.info('[BrowserTranslate]', msg),
+        dub: {
+          getSettings: () => dubSettings,
+          setSettings: (patch) => {
+            dubSettings = { ...dubSettings, ...patch };
+            void client.patchSettings({ dub: dubSettings });
+          },
+          hasEngine: () => subtitleReady,
+          ...(CLOUD_TTS && {
+            fetchCloudAudio: async (text: string, voiceId: string) => {
+              const req: CloudTtsRequest = { type: 'tts:cloud', text, voiceId };
+              const res = await chrome.runtime.sendMessage(req) as CloudTtsResponse;
+              if (!res?.ok) throw new Error(res?.error ?? 'no response');
+              return res.url;
+            },
+          }),
+          openSettings: (tab) => {
+            const req: OpenOptionsRequest = { type: 'options:open', tab };
+            void chrome.runtime.sendMessage(req).catch(() => {});
+          },
+          strings: {
+            titleOff: t('dubButtonTitle', locale),
+            titleOn: t('dubButtonTitleOn', locale),
+            preparing: t('ytSubsTranslating', locale),
+            clipVolume: t('dubClipVolume', locale),
+            dubVolume: t('dubVolume', locale),
+            rate: t('dubRate', locale),
+            noSubs: t('dubNoSubs', locale),
+            noVoice: t('dubNoVoice', locale),
+            noVoiceHelp: t('dubNoVoiceHelp', locale),
+            noEngine: t('dubNoEngine', locale),
+            openSettings: t('settings', locale),
+            autoStarted: t('dubAutoToast', locale),
+            stop: t('dubStop', locale),
+            uiLocale: locale,
+          },
+        },
       });
       attachWhenPlayerReady(subs, site);
     }
 
     await reattach();
 
+    // Opt-in at setup: keep a log of what was watched, as notes on this Mac.
+    if (import.meta.env.WXT_WATCHLOG && window.top === window && location.hostname.endsWith('youtube.com')) {
+      startWatchTracker({
+        findVideo: () => document.querySelector<HTMLVideoElement>('video.html5-main-video, video'),
+        mediaKey: () => (location.pathname === '/watch' && new URLSearchParams(location.search).get('v')) || '',
+        transcript: () => subs?.transcript() ?? [],
+        isDubbing: () => subs?.isDubbing() ?? false,
+        fetchDetails: async () => {
+          const res = await requestCaptionTracks();
+          return { details: res.details, language: res.tracks.find((t) => t.kind === 'asr')?.languageCode };
+        },
+        send: (record) => {
+          const req: WatchLogRequest = { type: 'watch:log', record };
+          void chrome.runtime.sendMessage(req).catch(() => {});
+        },
+      });
+    }
+
     // YouTube's own SPA-navigation event. No other site we handle needs one,
     // and listening for it elsewhere costs nothing.
     window.addEventListener('yt-navigate-finish', () => { void reattach(); });
+
+    // Alt+D turns the Thai dub on and off. Matched on the physical key: on a Mac
+    // Option+D types "∂", so `key` would never be "d".
+    window.addEventListener('keydown', (e) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.code !== 'KeyD') return;
+      if (!subs || !dubSettings.enabled || isTyping(e.target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      void subs.toggleDub();
+    }, true);
 
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local') return;
@@ -181,6 +255,14 @@ export default defineContentScript({
       if (next && onlySubtitleAppearanceChanged(change.oldValue as AppData | undefined, next)) {
         subtitlePosition = next.settings.subtitlePosition;
         subtitleStyle = next.settings.subtitleStyle;
+        const before = dubSettings;
+        dubSettings = next.settings.dub;
+        // The popup's switch and voice picker act on the video playing now.
+        if (subs && before.autoStart !== dubSettings.autoStart && subs.isDubbing() !== dubSettings.autoStart) {
+          void subs.toggleDub();
+        } else if (subs?.isDubbing() && before.voiceURI !== dubSettings.voiceURI) {
+          void subs.toggleDub().then(() => subs?.toggleDub());
+        }
         return;
       }
       void reattach();
@@ -188,17 +270,27 @@ export default defineContentScript({
   },
 });
 
+/** Whether a key press is going into a text field rather than to the page. */
+function isTyping(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+}
+
 /**
  * True when a stored-data change touched nothing but the subtitle position and
- * style. Both are read live by whatever is already running, so they need no
- * rebuild; everything else does.
+ * style, or the dub's voice, speed and volumes. All are read live by whatever
+ * is already running, so they need no rebuild — rebuilding would cut a dub off
+ * mid-sentence. Switching the dub on or off in settings does rebuild, since
+ * that adds or removes its button.
  */
 function onlySubtitleAppearanceChanged(
   before: AppData | undefined,
   after: AppData,
 ): boolean {
   if (!before) return false;
-  const blank = { subtitlePosition: null, subtitleStyle: null };
-  return JSON.stringify({ ...before, settings: { ...before.settings, ...blank } })
-    === JSON.stringify({ ...after, settings: { ...after.settings, ...blank } });
+  const blank = (d: AppData) => ({
+    ...d,
+    settings: { ...d.settings, subtitlePosition: null, subtitleStyle: null, dub: d.settings.dub?.enabled },
+  });
+  return JSON.stringify(blank(before)) === JSON.stringify(blank(after));
 }

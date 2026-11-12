@@ -393,3 +393,23 @@ describe('free services on upgrade (v0.2.3)', () => {
     expect(migrateAppData(data).providers.microsoft.enabled).toBe(true);
   });
 });
+
+describe('Thai dub settings (v0.2.4)', () => {
+  it('gives a store from before the dub the default dub settings', () => {
+    const data = createDefaultAppData();
+    delete (data.settings as Partial<GlobalSettings>).dub;
+    const out = migrateAppData(data);
+    expect(out.settings.dub).toEqual(createDefaultAppData().settings.dub);
+    // …and is stable from then on, so it is not written back on every load.
+    expect(migrateAppData(out)).toBe(out);
+  });
+
+  it('repairs a damaged dub block and keeps the rest of the settings', () => {
+    const data = createDefaultAppData();
+    data.settings.dub = { ...data.settings.dub, rate: 7, volume: Number.NaN };
+    const out = migrateAppData(data);
+    expect(out.settings.dub.rate).toBe(1.5);
+    expect(out.settings.dub.volume).toBe(100);
+    expect(out.settings.targetLanguage).toBe(data.settings.targetLanguage);
+  });
+});

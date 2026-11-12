@@ -1,5 +1,9 @@
 import { defineConfig } from 'wxt';
 import preact from '@preact/preset-vite';
+import { loadEnv } from 'vite';
+
+/** .env.local, for the settings of a personal build. */
+const personalEnv = loadEnv('production', process.cwd(), 'WXT_');
 
 /**
  * Firefox's permanent id for this add-on. AMO ties every signed version to it,
@@ -10,6 +14,8 @@ const GECKO_ID = '{13a30e30-c1c2-45ad-9bd6-9734872155d5}';
 
 export default defineConfig({
   srcDir: 'src',
+  // A visible folder: Finder hides `.output`, which is where Load unpacked has to point.
+  outDir: 'dist',
   // WXT builds Firefox as MV2 unless told otherwise. One manifest version for
   // every browser keeps the code paths the same: MV3 everywhere.
   manifestVersion: 3,
@@ -51,7 +57,11 @@ export default defineConfig({
     name: '__MSG_extName__',
     description: '__MSG_extDescription__',
     default_locale: 'en',
-    permissions: ['storage', 'activeTab', 'contextMenus', 'alarms'],
+    permissions: [
+      'storage', 'activeTab', 'contextMenus', 'alarms',
+      // Personal builds: the watch log is written by a native host on this Mac.
+      ...(personalEnv.WXT_WATCHLOG ? ['nativeMessaging'] : []),
+    ],
     // The free translation engines. Most model endpoints stay permission-free:
     // they are chosen at runtime and send CORS headers that let a browser talk
     // to them directly.

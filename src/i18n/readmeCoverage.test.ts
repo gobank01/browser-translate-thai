@@ -118,7 +118,7 @@ describe('localized README coverage', () => {
         expect(body.length).toBeLessThan(7500);
         // "todo" is ordinary Portuguese/Spanish, not necessarily a TODO marker.
         expect(content).not.toMatch(/<!--\s*TODO\b|\bTODO:/);
-        for (const value of ['56', '14', 'Alt+T', 'Alt+A', 'chrome://extensions', 'edge://extensions', '.xpi', '140', 'GPL-3.0']) {
+        for (const value of ['56', '15', 'Alt+T', 'Alt+A', 'chrome://extensions', 'edge://extensions', '.xpi', '140', 'GPL-3.0']) {
           expect(body, value).toContain(value);
         }
         for (const key of ['subtitleGeneral', 'sectionTranslation', 'sectionProviders', 'sectionSubtitles', 'sectionData', 'sectionRouting', 'checkForUpdate'] as const) {
@@ -153,7 +153,7 @@ describe('English documentation in readmes/develop/', () => {
   }
 
   it('keeps the detail the README no longer carries', () => {
-    for (const value of ['56', '14', '20', '{{...}}', 'chrome.storage.local', 'edge.microsoft.com', 'translate-pa.googleapis.com', 'about:debugging', '.xpi', 'Alt+T', 'Alt+A']) {
+    for (const value of ['56', '15', '20', '{{...}}', 'chrome.storage.local', 'edge.microsoft.com', 'translate-pa.googleapis.com', 'about:debugging', '.xpi', 'Alt+T', 'Alt+A']) {
       expect(all, value).toContain(value);
     }
     expect(all).toMatch(/12[,.\s]?000/);

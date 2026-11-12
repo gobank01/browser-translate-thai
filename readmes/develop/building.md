@@ -6,14 +6,14 @@ Requires Node.js 22 or later and pnpm. The extension is built with [WXT](https:/
 
 ```bash
 pnpm install          # also generates WXT's types
-pnpm dev              # Watch build: .output/chrome-mv3-dev/
-pnpm dev:firefox      # Watch build: .output/firefox-mv3-dev/
+pnpm dev              # Watch build: dist/chrome-mv3-dev/
+pnpm dev:firefox      # Watch build: dist/firefox-mv3-dev/
 pnpm test             # Tests in watch mode
 pnpm test:run         # Single test run
 pnpm typecheck        # WXT type generation + TypeScript
 pnpm lint             # ESLint
-pnpm build            # Production: .output/chrome-mv3/
-pnpm build:firefox    # Production: .output/firefox-mv3/
+pnpm build            # Production: dist/chrome-mv3/
+pnpm build:firefox    # Production: dist/firefox-mv3/
 pnpm zip              # Chrome/Edge package
 pnpm zip:firefox      # Firefox package + the sources archive Mozilla asks for
 ```

@@ -16,6 +16,7 @@
   <a href="./tr.md"><kbd>Türkçe</kbd></a>
   <a href="./vi.md"><kbd><b>Tiếng Việt</b></kbd></a>
   <a href="./id.md"><kbd>Bahasa Indonesia</kbd></a>
+  <a href="./th.md"><kbd>ไทย</kbd></a>
 </p>
 <p align="center"><a href="#installation">Cài đặt</a> · <a href="#quick-start">Bắt đầu nhanh</a> · <a href="./develop/README.md">Tài liệu</a> · <a href="../CHANGELOG.md">Nhật ký thay đổi</a> · <a href="https://github.com/Lewen-Cai/browser-translate/issues">Báo lỗi</a></p>
 <p align="center">
@@ -45,7 +46,7 @@
 - **Phụ đề video** — phụ đề song ngữ trên YouTube, bản ghi Zoom và Canvas, cùng các trình phát HTML5 tiêu chuẩn. Không chuyển giọng nói thành văn bản.
 - **Nhiều nhà cung cấp, mỗi nơi nhiều mô hình** — OpenAI, Claude, Gemini, DeepSeek, OpenRouter, Qwen và nhiều hơn nữa, cùng LM Studio, Ollama và các môi trường chạy cục bộ khác. Lưu nhiều mô hình cho mỗi nhà cung cấp và chọn một mô hình cho từng chế độ.
 - **Prompt cơ sở của riêng bạn** — xem prompt mặc định và tự viết mẫu riêng.
-- **56 ngôn ngữ đích**, giao diện **14 ngôn ngữ**, chủ đề sáng và tối.
+- **56 ngôn ngữ đích**, giao diện **15 ngôn ngữ**, chủ đề sáng và tối.
 
 <a id="installation"></a>
 ## Cài đặt

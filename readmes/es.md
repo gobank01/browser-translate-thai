@@ -16,6 +16,7 @@
   <a href="./tr.md"><kbd>Türkçe</kbd></a>
   <a href="./vi.md"><kbd>Tiếng Việt</kbd></a>
   <a href="./id.md"><kbd>Bahasa Indonesia</kbd></a>
+  <a href="./th.md"><kbd>ไทย</kbd></a>
 </p>
 <p align="center"><a href="#installation">Instalar</a> · <a href="#quick-start">Inicio rápido</a> · <a href="./develop/README.md">Documentación</a> · <a href="../CHANGELOG.md">Cambios</a> · <a href="https://github.com/Lewen-Cai/browser-translate/issues">Incidencias</a></p>
 <p align="center">
@@ -45,7 +46,7 @@
 - **Subtítulos de vídeo** — subtítulos bilingües en YouTube, grabaciones de Zoom y Canvas y reproductores HTML5 estándar. Sin transcripción de audio.
 - **Muchos proveedores, varios modelos en cada uno** — OpenAI, Claude, Gemini, DeepSeek, OpenRouter, Qwen y más, además de LM Studio, Ollama y otros entornos locales. Guarda varios modelos por proveedor y elige uno para cada modo.
 - **Tu propio prompt base** — consulta el predeterminado y escribe tus propias plantillas.
-- **56 idiomas de destino**, interfaz en **14 idiomas**, temas claro y oscuro.
+- **56 idiomas de destino**, interfaz en **15 idiomas**, temas claro y oscuro.
 
 <a id="installation"></a>
 ## Instalación

@@ -64,7 +64,10 @@ export function createYouTubeSite(): SubtitleSite {
       if (found.isLive) return { kind: 'live' };
       const track = pickTrack(found.tracks, trackPref(found));
       if (!track) return { kind: 'none' };
-      return { kind: 'ready', languageCode: track.languageCode };
+      // Auto-generated captions are made from the audio, so their language is
+      // the language being spoken — whatever track the viewer has on screen.
+      const asr = found.tracks.find((t) => t.kind === 'asr');
+      return { kind: 'ready', languageCode: track.languageCode, spokenLanguage: asr?.languageCode };
     },
 
     async fetchTranscript(): Promise<Cue[]> {

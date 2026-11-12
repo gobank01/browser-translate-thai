@@ -4,6 +4,7 @@ import { DEFAULT_SUBTITLE_POSITION, DEFAULT_SUBTITLE_STYLE } from '~/core/subtit
 import { DEFAULT_TARGET_LANGUAGE } from '~/core/language/targets';
 import { DEFAULT_CARD_SIZE } from '~/core/card/size';
 import { defaultPromptSettings } from '~/core/prompt/templates';
+import { DEFAULT_DUB_SETTINGS } from '~/core/dub/settings';
 
 /**
  * A blank row for `id`. Cloud vendors start on their first endpoint so the
@@ -49,6 +50,7 @@ export function createDefaultAppData(): AppData {
       cardSize: DEFAULT_CARD_SIZE,
       subtitlePosition: DEFAULT_SUBTITLE_POSITION,
       subtitleStyle: DEFAULT_SUBTITLE_STYLE,
+      dub: DEFAULT_DUB_SETTINGS,
       theme: 'auto',
       uiLanguage: 'auto',
     },

@@ -13,11 +13,14 @@ import { useApplyLocale } from '~/ui/useApplyLocale';
 import { UpdateCheck, UpdateNotice, useUpdateCheck } from './UpdateCheck';
 
 type Tab = 'general' | 'translation' | 'providers' | 'video' | 'data';
+const TABS: readonly Tab[] = ['general', 'translation', 'providers', 'video', 'data'];
+const initialTab = (hash: string): Tab => (TABS as readonly string[]).includes(hash) ? hash as Tab : 'general';
 
 export function App() {
   const load = useAppStore((s) => s.load);
   const loaded = useAppStore((s) => s.loaded);
-  const [tab, setTab] = useState<Tab>('general');
+  // A link from the player (e.g. the dub's "how to enable" toast) names a tab.
+  const [tab, setTab] = useState<Tab>(() => initialTab(location.hash.slice(1)));
   const t = useT();
   useApplyTheme();
   useApplyLocale();

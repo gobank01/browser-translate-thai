@@ -16,6 +16,7 @@
   <a href="./tr.md"><kbd>Türkçe</kbd></a>
   <a href="./vi.md"><kbd>Tiếng Việt</kbd></a>
   <a href="./id.md"><kbd>Bahasa Indonesia</kbd></a>
+  <a href="./th.md"><kbd>ไทย</kbd></a>
 </p>
 <p align="center"><a href="#installation">Установка</a> · <a href="#quick-start">Быстрый старт</a> · <a href="./develop/README.md">Документация</a> · <a href="../CHANGELOG.md">Изменения</a> · <a href="https://github.com/Lewen-Cai/browser-translate/issues">Issues</a></p>
 <p align="center">
@@ -45,7 +46,7 @@
 - **Субтитры к видео** — двуязычные субтитры на YouTube, в записях Zoom и Canvas и в стандартных HTML5-плеерах. Распознавания речи нет.
 - **Много провайдеров, у каждого несколько моделей** — OpenAI, Claude, Gemini, DeepSeek, OpenRouter, Qwen и другие, а также LM Studio, Ollama и прочие локальные среды. Держите у провайдера несколько моделей и выбирайте свою для каждого режима.
 - **Свой базовый промпт** — посмотрите стандартный и напишите собственные шаблоны.
-- **56 целевых языков**, интерфейс на **14 языках**, светлая и тёмная темы.
+- **56 целевых языков**, интерфейс на **15 языках**, светлая и тёмная темы.
 
 <a id="installation"></a>
 ## Установка

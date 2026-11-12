@@ -37,7 +37,7 @@ The player menu and **Settings → Subtitles** control bilingual/original-only/t
 
 ## Languages
 
-**56 translation targets** are independent of the **14 interface languages**. The interface can follow the browser's locale. Target pickers in the popup, settings and card search native, English and interface-language names, language codes and English-region aliases. RTL names keep their reading direction while menu rows stay aligned.
+**56 translation targets** are independent of the **15 interface languages**. The interface can follow the browser's locale. Target pickers in the popup, settings and card search native, English and interface-language names, language codes and English-region aliases. RTL names keep their reading direction while menu rows stay aligned.
 
 English targets are **United States, United Kingdom and Australia**; old generic `en` settings migrate to US English. Chinese targets are **Simplified and Traditional**. LLMs receive explicit regional spelling and vocabulary instructions. Free services use the requested variety where supported, otherwise generic English silently, without switching providers.
 

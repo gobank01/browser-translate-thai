@@ -10,6 +10,8 @@ import { normalizeEngineRouting } from '~/core/engines/routing';
 import { normalizeTargetLanguage } from '~/core/language/targets';
 import { normalizeSubtitlePosition, normalizeSubtitleStyle } from '~/core/subtitles/style';
 import { normalizePromptSettings } from '~/core/prompt/templates';
+import { normalizeDubSettings } from '~/core/dub/settings';
+import { applyPersonalPreset } from './personalPreset';
 import { isLocale } from '~/i18n/localeInfo';
 
 /**
@@ -28,6 +30,7 @@ export function migrateAppData(input: AppData): AppData {
   data = adoptProviders(data);
   data = nameLegacyRouteModels(data);
   data = fillSettingsDefaults(data);
+  data = applyPersonalPreset(data);
   return data;
 }
 
@@ -266,6 +269,8 @@ function fillSettingsDefaults(data: AppData): AppData {
   const cardSize = normalizeCardSize(s.cardSize);
   const subtitlePosition = normalizeSubtitlePosition(s.subtitlePosition);
   const subtitleStyle = normalizeSubtitleStyle(s.subtitleStyle);
+  // Added with the Thai dub (v0.2.4): older stores get the defaults.
+  const dub = normalizeDubSettings(s.dub);
   // A target language we no longer offer would be sent to the providers verbatim
   // and answered with something arbitrary, so it falls back rather than passes
   // through. Legacy generic English migrates to US English.
@@ -279,6 +284,7 @@ function fillSettingsDefaults(data: AppData): AppData {
     targetLanguage === s.targetLanguage &&
     subtitlePosition === s.subtitlePosition &&
     subtitleStyle === s.subtitleStyle &&
+    dub === s.dub &&
     !('engine' in s);
   if (unchanged) return data;
 
@@ -296,6 +302,7 @@ function fillSettingsDefaults(data: AppData): AppData {
       uiLanguage,
       subtitlePosition,
       subtitleStyle,
+      dub,
       cardSize,
     },
   };

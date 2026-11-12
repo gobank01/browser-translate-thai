@@ -16,6 +16,7 @@
   <a href="./tr.md"><kbd>Türkçe</kbd></a>
   <a href="./vi.md"><kbd>Tiếng Việt</kbd></a>
   <a href="./id.md"><kbd>Bahasa Indonesia</kbd></a>
+  <a href="./th.md"><kbd>ไทย</kbd></a>
 </p>
 <p align="center"><a href="#installation">설치</a> · <a href="#quick-start">빠른 시작</a> · <a href="./develop/README.md">문서</a> · <a href="../CHANGELOG.md">변경 기록</a> · <a href="https://github.com/Lewen-Cai/browser-translate/issues">문제 신고</a></p>
 <p align="center">
@@ -45,7 +46,7 @@
 - **영상 자막** — YouTube, Zoom·Canvas 녹화 영상, 표준 HTML5 플레이어에서 이중 언어 자막을 표시합니다. 음성을 전사하지는 않습니다.
 - **다양한 제공업체, 업체마다 여러 모델** — OpenAI, Claude, Gemini, DeepSeek, OpenRouter, Qwen 등과 LM Studio, Ollama 같은 로컬 실행 환경을 지원합니다. 제공업체마다 여러 모델을 저장해 두고 모드별로 하나씩 고를 수 있습니다.
 - **직접 작성하는 기본 프롬프트** — 기본 프롬프트를 확인하고 나만의 템플릿을 작성할 수 있습니다.
-- **56개 대상 언어**, **14개 언어**로 된 인터페이스, 밝은 테마와 어두운 테마.
+- **56개 대상 언어**, **15개 언어**로 된 인터페이스, 밝은 테마와 어두운 테마.
 
 <a id="installation"></a>
 ## 설치

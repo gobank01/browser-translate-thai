@@ -1,5 +1,7 @@
 import { PAGE_TRANSLATE_CSS, PAGE_TRANSLATE_STYLE_ID } from './styles';
 
+const HIDDEN_SOURCE = 'bt-source-hidden';
+
 /**
  * Inserts and manages the bilingual translation nodes in the page DOM. One node
  * per source block, tracked in a Map for clean teardown.
@@ -8,7 +10,12 @@ export class BilingualInjector {
   private nodes = new Map<HTMLElement, HTMLElement>();
   private styleInjected = false;
 
-  constructor(private readonly doc: Document) {}
+  /**
+   * `translationOnly`: once a block's translation arrives, hide the original
+   * and show only the translation. Table cells keep both, since there the
+   * translation lives inside the cell being hidden.
+   */
+  constructor(private readonly doc: Document, private readonly translationOnly = false) {}
 
   private ensureStyles(): void {
     if (this.styleInjected || this.doc.getElementById(PAGE_TRANSLATE_STYLE_ID)) {
@@ -70,6 +77,10 @@ export class BilingualInjector {
     const node = this.nodes.get(block);
     if (!node) return;
     node.textContent = text;
+    if (this.translationOnly && node.parentElement !== block) {
+      block.classList.add(HIDDEN_SOURCE);
+      node.classList.add('bt-translation-only');
+    }
   }
 
   setError(block: HTMLElement, message: string, retryLabel: string, onRetry: () => void): void {
@@ -94,7 +105,10 @@ export class BilingualInjector {
   }
 
   teardown(): void {
-    for (const node of this.nodes.values()) node.remove();
+    for (const [block, node] of this.nodes) {
+      node.remove();
+      block.classList.remove(HIDDEN_SOURCE);
+    }
     this.nodes.clear();
     this.doc.getElementById(PAGE_TRANSLATE_STYLE_ID)?.remove();
     this.styleInjected = false; // load-bearing: lets a later enable() re-inject the stylesheet

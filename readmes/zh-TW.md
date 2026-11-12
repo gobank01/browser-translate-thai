@@ -16,6 +16,7 @@
   <a href="./tr.md"><kbd>Türkçe</kbd></a>
   <a href="./vi.md"><kbd>Tiếng Việt</kbd></a>
   <a href="./id.md"><kbd>Bahasa Indonesia</kbd></a>
+  <a href="./th.md"><kbd>ไทย</kbd></a>
 </p>
 <p align="center"><a href="#installation">安裝</a> · <a href="#quick-start">快速上手</a> · <a href="./develop/README.md">文件</a> · <a href="../CHANGELOG.md">更新紀錄</a> · <a href="https://github.com/Lewen-Cai/browser-translate/issues">問題回報</a></p>
 <p align="center">
@@ -45,7 +46,7 @@
 - **影片字幕** — 為 YouTube、Zoom 與 Canvas 的錄影以及標準 HTML5 播放器提供雙語字幕。不進行音訊轉錄。
 - **多家服務商，每家多個模型** — OpenAI、Claude、Gemini、DeepSeek、OpenRouter、Qwen 等，以及 LM Studio、Ollama 等本機執行環境。每家服務商可保存多個模型，並為每種模式分別選擇。
 - **自訂基礎 Prompt** — 查看預設內容，撰寫自己的範本。
-- **56 種目標語言**，介面支援 **14 種語言**，提供淺色與深色主題。
+- **56 種目標語言**，介面支援 **15 種語言**，提供淺色與深色主題。
 
 <a id="installation"></a>
 ## 安裝

@@ -88,7 +88,7 @@ export interface SiteButtonStyle {
 
 export type SiteProbe =
   /** There are captions. `languageCode` lets a needless translation be skipped. */
-  | { kind: 'ready'; languageCode?: string }
+  | { kind: 'ready'; languageCode?: string; spokenLanguage?: string }
   /** Nothing to translate — the toggle should not be offered at all. */
   | { kind: 'none' }
   /** A live stream: there is no transcript to look ahead in. */

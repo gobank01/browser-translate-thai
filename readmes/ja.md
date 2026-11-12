@@ -16,6 +16,7 @@
   <a href="./tr.md"><kbd>Türkçe</kbd></a>
   <a href="./vi.md"><kbd>Tiếng Việt</kbd></a>
   <a href="./id.md"><kbd>Bahasa Indonesia</kbd></a>
+  <a href="./th.md"><kbd>ไทย</kbd></a>
 </p>
 <p align="center"><a href="#installation">インストール</a> · <a href="#quick-start">クイックスタート</a> · <a href="./develop/README.md">ドキュメント</a> · <a href="../CHANGELOG.md">変更履歴</a> · <a href="https://github.com/Lewen-Cai/browser-translate/issues">問題の報告</a></p>
 <p align="center">
@@ -45,7 +46,7 @@
 - **動画字幕** — YouTube、Zoom と Canvas の録画、標準的な HTML5 プレーヤーで対訳字幕を表示します。音声の文字起こしは行いません。
 - **多数のプロバイダー、それぞれ複数のモデル** — OpenAI、Claude、Gemini、DeepSeek、OpenRouter、Qwen など、さらに LM Studio、Ollama などのローカル実行環境にも対応。プロバイダーごとに複数のモデルを登録し、モードごとに使い分けられます。
 - **独自の基本プロンプト** — 既定の内容を確認し、自分のテンプレートを作成できます。
-- **56 の翻訳先言語**、**14 言語**のインターフェース、ライトテーマとダークテーマ。
+- **56 の翻訳先言語**、**15 言語**のインターフェース、ライトテーマとダークテーマ。
 
 <a id="installation"></a>
 ## インストール

@@ -1,6 +1,7 @@
 import { collectBlocks } from './collectBlocks';
 import { groupIntoBatches } from './scheduler';
 import { BilingualInjector } from './inject';
+import { PERSONAL_BUILD } from '~/storage/personalPreset';
 import { translateBatch, isConfigError } from '~/messaging/client';
 
 const BATCH_LIMITS = { maxSegments: 8, maxChars: 2400 };
@@ -21,7 +22,7 @@ export interface PageTranslator {
 
 export function createPageTranslator(deps: PageTranslatorDeps): PageTranslator {
   let on = false;
-  const injector = new BilingualInjector(document);
+  const injector = new BilingualInjector(document, PERSONAL_BUILD);
   const queued = new Set<HTMLElement>(); // visible, awaiting dispatch
   const handled = new Set<HTMLElement>(); // observed (any state) — never re-observe
   let io: IntersectionObserver | null = null;

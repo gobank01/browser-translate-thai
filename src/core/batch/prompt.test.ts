@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { batchSystemPrompt, batchUserPrompt } from './prompt';
+import { batchSystemPrompt, batchUserPrompt, SPOKEN_STYLE } from './prompt';
 import { DEFAULT_STYLE_PROMPT } from '~/core/prompt/style';
 
 describe('batchSystemPrompt', () => {
@@ -24,5 +24,13 @@ describe('batchUserPrompt', () => {
     const segments = ['a\nb', '"hello" {{targetLang}}'];
     const user = batchUserPrompt(segments, 'en-AU');
     expect(JSON.parse(user.slice(user.indexOf('\n\n') + 2))).toEqual(segments.map((text, id) => ({ id, text })));
+  });
+});
+
+describe('spoken dub style', () => {
+  it('is added for subtitles in a spoken build only', () => {
+    expect(batchSystemPrompt('th', undefined, 'subtitle', true)).toContain(SPOKEN_STYLE);
+    expect(batchSystemPrompt('th', undefined, 'subtitle')).not.toContain(SPOKEN_STYLE);
+    expect(batchSystemPrompt('th', undefined, 'fullPage', true)).not.toContain(SPOKEN_STYLE);
   });
 });

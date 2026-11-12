@@ -22,6 +22,7 @@
   <a href="./readmes/tr.md"><kbd>Türkçe</kbd></a>
   <a href="./readmes/vi.md"><kbd>Tiếng Việt</kbd></a>
   <a href="./readmes/id.md"><kbd>Bahasa Indonesia</kbd></a>
+  <a href="./readmes/th.md"><kbd>ไทย</kbd></a>
 </p>
 <p align="center">
   <a href="#installation">Install</a> · <a href="#quick-start">Quick start</a> · <a href="./readmes/develop/README.md">Docs</a> · <a href="./CHANGELOG.md">Changelog</a> · <a href="https://github.com/Lewen-Cai/browser-translate/issues">Issues</a>
@@ -53,7 +54,7 @@
 - **Video subtitles** — bilingual captions on YouTube, Zoom and Canvas recordings and standard HTML5 players. No audio transcription.
 - **Many providers, several models each** — OpenAI, Claude, Gemini, DeepSeek, OpenRouter, Qwen and more, plus LM Studio, Ollama and other local runtimes. Keep several models per provider and choose one for each mode.
 - **Your own base prompt** — read the default and write your own templates.
-- **56 target languages**, an interface in **14 languages**, light and dark themes.
+- **56 target languages**, an interface in **15 languages**, light and dark themes.
 
 <a id="installation"></a>
 ## Install

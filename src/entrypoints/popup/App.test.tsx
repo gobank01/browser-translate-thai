@@ -35,14 +35,14 @@ describe('popup current-page control', () => {
     query.mockResolvedValueOnce([{ id: 1, url: 'chrome://extensions' }]);
     render(<App />);
     await screen.findByText('Translation is not available on this browser page.');
-    expect((screen.getByRole('switch') as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('switch', { name: 'Translate full page' }) as HTMLButtonElement).disabled).toBe(true);
     expect(send).not.toHaveBeenCalled();
   });
   it('offers a refresh hint when the content script is unavailable', async () => {
     send.mockRejectedValueOnce(new Error('no receiver'));
     render(<App />);
     await screen.findByText(/Refresh this webpage/);
-    expect((screen.getByRole('switch') as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('switch', { name: 'Translate full page' }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
 
@@ -75,5 +75,25 @@ describe('popup layout (v0.2.3)', () => {
     render(<App />);
     await screen.findByText('Showing the original page');
     expect(screen.queryByText(/vtest|test$/)).toBeNull();
+  });
+});
+
+describe('popup Thai dub', () => {
+  it('turns automatic dubbing on with one switch', async () => {
+    const updateSettings = vi.fn(async () => {});
+    useAppStore.setState({ updateSettings });
+    render(<App />);
+    fireEvent.click(screen.getByRole('switch', { name: 'Automatic Thai dub' }));
+    expect(updateSettings).toHaveBeenCalledWith({ dub: expect.objectContaining({ autoStart: true }) });
+  });
+
+  it('turns the dub up and the video down with the panel buttons', async () => {
+    const updateSettings = vi.fn(async () => {});
+    useAppStore.setState({ updateSettings });
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Dub volume −' }));
+    expect(updateSettings).toHaveBeenLastCalledWith({ dub: expect.objectContaining({ volume: 90 }) });
+    fireEvent.click(screen.getByRole('button', { name: 'Video volume while dubbing −' }));
+    expect(updateSettings).toHaveBeenLastCalledWith({ dub: expect.objectContaining({ duckVolume: 0 }) });
   });
 });

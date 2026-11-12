@@ -17,13 +17,50 @@ import { selectionSystemPrompt } from '~/core/selection/prompt';
 import { InvalidModelOutputError, responseCachePrompt, runSelection, SelectionStreamGate, validateSelectionResult, type ResultFormat } from '~/core/selection/response';
 import { resolveBasePrompt } from '~/core/prompt/templates';
 import { batchSystemPrompt, batchUserPrompt } from '~/core/batch/prompt';
+import { PERSONAL_BUILD } from '~/storage/personalPreset';
+import { clipKey, getClip, putClip } from '~/core/dub/audioCache';
 import { parseBatchArray } from '~/core/batch/parse';
 import { runBatch } from '~/core/batch/runBatch';
 import { languageName, normalizeTargetLanguage } from '~/core/language/targets';
 import { t as i18nT, resolveLocale } from '~/i18n';
 import { fetchLatestRelease } from '~/core/update/github';
 import { isUpdateAvailable } from '~/core/update/version';
-import type { Request, TranslateRequest, TranslateBatchRequest } from '~/messaging/types';
+import type { CloudTtsResponse, Request, TranslateRequest, TranslateBatchRequest } from '~/messaging/types';
+
+/**
+ * One dub line from ElevenLabs. The key is baked in at build time
+ * (`WXT_ELEVENLABS_KEY` in .env.local — personal builds only) and stays in the
+ * background. eleven_v4: ElevenLabs' best Thai voice quality (~2.3 s a line, hidden by fetching 20 s ahead).
+ */
+const TTS_MODEL = 'eleven_v4';
+const WATCHLOG_HOST = 'com.bizdrive.watchlog';
+
+async function cloudTts(text: string, voiceId: string): Promise<CloudTtsResponse> {
+  const key = import.meta.env.WXT_ELEVENLABS_KEY;
+  if (!key) return { ok: false, error: 'no-key' };
+  const cacheKey = clipKey(voiceId, TTS_MODEL, text);
+  const cached = await getClip(cacheKey);
+  if (cached) return { ok: true, url: cached };
+  try {
+    const res = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_64`,
+      {
+        method: 'POST',
+        headers: { 'xi-api-key': key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, model_id: TTS_MODEL, language_code: 'th' }),
+      },
+    );
+    if (!res.ok) return { ok: false, error: `http-${res.status}` };
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    const url = `data:audio/mpeg;base64,${btoa(bin)}`;
+    await putClip(cacheKey, url);
+    return { ok: true, url };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
 
 /** Parallel requests the free engines get per batch — they are far cheaper and
  *  faster per call than an LLM, so a page fills in noticeably sooner. */
@@ -34,6 +71,24 @@ export default defineBackground(() => {
   const activeAborts = new Map<string, AbortController>();
 
   chrome.runtime.onMessage.addListener((msg: Request, _sender, sendResponse) => {
+    if (msg.type === 'watch:log') {
+      // Written into a folder of notes by a native host on this Mac
+      // (watchlog/). Without the host installed this quietly fails.
+      if (import.meta.env.WXT_WATCHLOG) {
+        void chrome.runtime.sendNativeMessage(WATCHLOG_HOST, msg.record).catch(() => {});
+      }
+      return false;
+    }
+    if (msg.type === 'tts:cloud') {
+      void cloudTts(msg.text, msg.voiceId).then(sendResponse);
+      return true; // async response
+    }
+    if (msg.type === 'options:open') {
+      // A content script cannot open extension pages itself. The tab goes in the
+      // hash, which the settings page reads to decide where to start.
+      void chrome.tabs.create({ url: chrome.runtime.getURL(`/options.html#${msg.tab}`) });
+      return false;
+    }
     if (msg.type === 'translate:abort') {
       activeAborts.get(msg.requestId)?.abort();
       sendResponse({ ok: true });
@@ -279,7 +334,7 @@ async function handleTranslateBatch(
       return;
     }
     const targetLang = normalizeTargetLanguage(msg.targetLang ?? data.settings.targetLanguage);
-    const systemPrompt = useMt ? undefined : batchSystemPrompt(targetLang, resolveBasePrompt(data.settings.prompts), msg.surface);
+    const systemPrompt = useMt ? undefined : batchSystemPrompt(targetLang, resolveBasePrompt(data.settings.prompts), msg.surface, PERSONAL_BUILD);
 
     // One AbortController for the whole batch request: runBatch may call
     // translateOnce many times (the batch call plus per-segment fallback), and

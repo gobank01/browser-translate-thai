@@ -109,7 +109,32 @@ export interface PageStateResponse {
   translated: boolean;
 }
 
+/** Content script → background: open the settings page at a tab. */
+export interface OpenOptionsRequest {
+  type: 'options:open';
+  tab: 'video' | 'translation';
+}
+
+/** Content script → background: Thai speech from ElevenLabs for one dub line. */
+export interface CloudTtsRequest {
+  type: 'tts:cloud';
+  text: string;
+  voiceId: string;
+}
+
+/** Background → content script: a data: URL of the audio, or why there is none. */
+export type CloudTtsResponse = { ok: true; url: string } | { ok: false; error: string };
+
+/** Content script → background: one entry for the personal watch log. */
+export interface WatchLogRequest {
+  type: 'watch:log';
+  record: import('~/core/watchlog/watchLog').WatchRecord;
+}
+
 export type Request =
+  | WatchLogRequest
+  | CloudTtsRequest
+  | OpenOptionsRequest
   | TranslateRequest
   | TranslateBatchRequest
   | AbortRequest

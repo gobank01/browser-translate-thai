@@ -13,6 +13,7 @@ import { ru } from './locales/ru';
 import { tr } from './locales/tr';
 import { vi } from './locales/vi';
 import { id } from './locales/id';
+import { th } from './locales/th';
 import type { Locale } from './localeInfo';
 
 export { LOCALES, type Locale } from './localeInfo';
@@ -33,4 +34,5 @@ export const MESSAGES: Record<Locale, Record<StringKey, string>> = {
   tr,
   vi,
   id,
+  th,
 };

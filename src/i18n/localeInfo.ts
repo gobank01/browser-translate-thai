@@ -14,6 +14,7 @@ export const LOCALE_LABELS = {
   tr: 'Türkçe',
   vi: 'Tiếng Việt',
   id: 'Bahasa Indonesia',
+  th: 'ไทย',
 } as const;
 
 export type Locale = keyof typeof LOCALE_LABELS;

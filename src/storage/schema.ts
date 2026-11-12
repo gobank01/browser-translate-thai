@@ -1,6 +1,7 @@
 import type { ProviderId } from '~/core/providers/registry';
 import type { ThinkingDialect } from '~/core/providers/thinking';
 import type { SubtitlePosition, SubtitleStyle } from '~/core/subtitles/style';
+import type { DubSettings } from '~/core/dub/settings';
 import type { CardSize } from '~/core/card/size';
 import type { PromptSettings } from '~/core/prompt/templates';
 import type { Locale } from '~/i18n/localeInfo';
@@ -103,8 +104,12 @@ export interface GlobalSettings {
   subtitlePosition: SubtitlePosition;
   /** How the on-video subtitles are drawn. */
   subtitleStyle: SubtitleStyle;
+  /** Thai dub: speak the translated subtitles aloud. */
+  dub: DubSettings;
   theme: 'light' | 'dark' | 'auto';
   uiLanguage: 'auto' | Locale;
+  /** Personal builds: which one-time preset defaults this store has taken. */
+  personalPreset?: number;
 }
 
 /**

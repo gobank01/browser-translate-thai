@@ -18,6 +18,8 @@ export const PAGE_TRANSLATE_CSS = `
   border: none !important;
   background: none !important;
 }
+.bt-source-hidden { display: none !important; }
+.bt-bilingual.bt-translation-only { opacity: 1 !important; margin: 0 0 8px 0 !important; }
 .bt-bilingual-loading {
   display: inline-block !important;
   min-width: 64px;

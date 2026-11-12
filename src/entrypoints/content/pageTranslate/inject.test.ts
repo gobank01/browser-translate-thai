@@ -125,3 +125,18 @@ describe('BilingualInjector', () => {
     expect(node.style.gridColumn).toBe('');
   });
 });
+
+describe('BilingualInjector translation-only', () => {
+  it('hides the original once its translation arrives, and shows it again on teardown', () => {
+    document.body.innerHTML = '<p id="p">Hello</p>';
+    const block = document.getElementById('p')!;
+    const inj = new BilingualInjector(document, true);
+    inj.placeLoading(block);
+    expect(block.classList.contains('bt-source-hidden')).toBe(false);
+    inj.setTranslation(block, 'สวัสดี');
+    expect(block.classList.contains('bt-source-hidden')).toBe(true);
+    inj.teardown();
+    expect(block.classList.contains('bt-source-hidden')).toBe(false);
+    expect(document.body.textContent).toBe('Hello');
+  });
+});

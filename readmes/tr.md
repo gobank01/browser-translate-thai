@@ -16,6 +16,7 @@
   <a href="./tr.md"><kbd><b>Türkçe</b></kbd></a>
   <a href="./vi.md"><kbd>Tiếng Việt</kbd></a>
   <a href="./id.md"><kbd>Bahasa Indonesia</kbd></a>
+  <a href="./th.md"><kbd>ไทย</kbd></a>
 </p>
 <p align="center"><a href="#installation">Kurulum</a> · <a href="#quick-start">Hızlı başlangıç</a> · <a href="./develop/README.md">Belgeler</a> · <a href="../CHANGELOG.md">Değişiklikler</a> · <a href="https://github.com/Lewen-Cai/browser-translate/issues">Sorunlar</a></p>
 <p align="center">
@@ -45,7 +46,7 @@
 - **Video altyazıları** — YouTube, Zoom ve Canvas kayıtlarında ve standart HTML5 oynatıcılarda iki dilli altyazı. Sesten metne dönüştürme yapılmaz.
 - **Çok sayıda sağlayıcı, her birinde birden fazla model** — OpenAI, Claude, Gemini, DeepSeek, OpenRouter, Qwen ve daha fazlası; ayrıca LM Studio, Ollama ve diğer yerel çalışma ortamları. Her sağlayıcıda birkaç model tutun ve her mod için birini seçin.
 - **Kendi temel isteminiz** — varsayılanı okuyun, kendi şablonlarınızı yazın.
-- **56 hedef dil**, **14 dilde** arayüz, açık ve koyu tema.
+- **56 hedef dil**, **15 dilde** arayüz, açık ve koyu tema.
 
 <a id="installation"></a>
 ## Kurulum

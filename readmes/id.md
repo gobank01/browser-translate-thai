@@ -16,6 +16,7 @@
   <a href="./tr.md"><kbd>Türkçe</kbd></a>
   <a href="./vi.md"><kbd>Tiếng Việt</kbd></a>
   <a href="./id.md"><kbd><b>Bahasa Indonesia</b></kbd></a>
+  <a href="./th.md"><kbd>ไทย</kbd></a>
 </p>
 <p align="center"><a href="#installation">Instalasi</a> · <a href="#quick-start">Mulai cepat</a> · <a href="./develop/README.md">Dokumentasi</a> · <a href="../CHANGELOG.md">Perubahan</a> · <a href="https://github.com/Lewen-Cai/browser-translate/issues">Isu</a></p>
 <p align="center">
@@ -45,7 +46,7 @@
 - **Subtitel video** — subtitel dwibahasa di YouTube, rekaman Zoom dan Canvas, serta pemutar HTML5 standar. Tanpa transkripsi audio.
 - **Banyak penyedia, beberapa model per penyedia** — OpenAI, Claude, Gemini, DeepSeek, OpenRouter, Qwen, dan lainnya, ditambah LM Studio, Ollama, dan runtime lokal lain. Simpan beberapa model per penyedia dan pilih satu untuk tiap mode.
 - **Prompt dasar sendiri** — baca prompt bawaan dan tulis templat Anda sendiri.
-- **56 bahasa target**, antarmuka dalam **14 bahasa**, tema terang dan gelap.
+- **56 bahasa target**, antarmuka dalam **15 bahasa**, tema terang dan gelap.
 
 <a id="installation"></a>
 ## Instalasi

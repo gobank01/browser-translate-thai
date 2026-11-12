@@ -6,6 +6,7 @@ import {
   type CaptionTrack,
   type TranscriptRequest,
   type TranscriptResponse,
+  type VideoDetails,
 } from './content/videoSubs/bridgeProtocol';
 
 /**
@@ -132,7 +133,20 @@ export default defineContentScript({
         /* captions module not ready */
       }
 
-      window.postMessage({ source: BT_RES, isLive, tracks, activeVssId, activeLanguageCode }, '*');
+      const vd = (pr as { videoDetails?: Record<string, unknown> }).videoDetails;
+      const details: VideoDetails | undefined = vd && typeof vd.videoId === 'string'
+        ? {
+            videoId: vd.videoId,
+            title: String(vd.title ?? ''),
+            author: String(vd.author ?? ''),
+            channelId: String(vd.channelId ?? ''),
+            lengthSeconds: Number(vd.lengthSeconds) || 0,
+            keywords: Array.isArray(vd.keywords) ? vd.keywords.map(String).slice(0, 30) : [],
+            shortDescription: String(vd.shortDescription ?? '').slice(0, 2000),
+          }
+        : undefined;
+
+      window.postMessage({ source: BT_RES, isLive, tracks, activeVssId, activeLanguageCode, details }, '*');
     });
   },
 });
