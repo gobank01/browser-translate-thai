@@ -2,7 +2,7 @@
 <h1 align="center">BrowserTranslate</h1>
 <p align="center"><strong>원하는 모델로 웹페이지와 영상 자막을 읽으세요.</strong><br>오픈 소스 · 직접 준비한 API 키 · 중계 서버 없음 · 원격 측정 없음</p>
 <p align="center">
-  <a href="../README.md"><kbd>English</kbd></a>
+  <a href="./en.md"><kbd>English</kbd></a>
   <a href="./zh-CN.md"><kbd>简体中文</kbd></a>
   <a href="./zh-TW.md"><kbd>繁體中文</kbd></a>
   <a href="./ja.md"><kbd>日本語</kbd></a>

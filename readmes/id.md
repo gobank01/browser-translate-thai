@@ -2,7 +2,7 @@
 <h1 align="center">BrowserTranslate</h1>
 <p align="center"><strong>Baca halaman dan subtitel dengan model pilihan Anda.</strong><br>Sumber terbuka · Kunci API sendiri · Tanpa server perantara · Tanpa telemetri</p>
 <p align="center">
-  <a href="../README.md"><kbd>English</kbd></a>
+  <a href="./en.md"><kbd>English</kbd></a>
   <a href="./zh-CN.md"><kbd>简体中文</kbd></a>
   <a href="./zh-TW.md"><kbd>繁體中文</kbd></a>
   <a href="./ja.md"><kbd>日本語</kbd></a>

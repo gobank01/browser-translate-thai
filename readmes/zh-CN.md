@@ -7,7 +7,7 @@
   开源浏览器翻译 · 自带 API Key · 零中转 · 零遥测
 </p>
 <p align="center">
-  <a href="../README.md"><kbd>English</kbd></a>
+  <a href="./en.md"><kbd>English</kbd></a>
   <a href="./zh-CN.md"><kbd><b>简体中文</b></kbd></a>
   <a href="./zh-TW.md"><kbd>繁體中文</kbd></a>
   <a href="./ja.md"><kbd>日本語</kbd></a>

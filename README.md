@@ -1,118 +1,104 @@
-<p align="center">
-  <img src="./assets/banner.png" alt="BrowserTranslate — privacy-first browser translation" width="900">
-</p>
-<h1 align="center">BrowserTranslate</h1>
-<p align="center"><strong>🇹🇭 <a href="./GUIDE-TH.md">พากย์ไทยอัตโนมัติสำหรับคลิปต่างประเทศ — อ่านคู่มือติดตั้งภาษาไทย</a></strong></p>
-<p align="center">
-  <strong>Read webpages and subtitles with the model you choose.</strong><br>
-  Open-source browser translation · Bring your own key · No relay · No telemetry
-</p>
+<h1 align="center">พากย์ไทยอัตโนมัติ สำหรับคลิปต่างประเทศ</h1>
+<p align="center"><strong>ส่วนขยาย Chrome ที่ทำให้คลิป YouTube ภาษาอังกฤษ (และภาษาอื่น) พูดเป็นภาษาไทยทันทีที่เปิด</strong><br>ไม่มีเซิร์ฟเวอร์กลาง · key ของคุณอยู่ในเครื่องคุณ · โอเพนซอร์ส GPL-3.0</p>
 
-<p align="center">
-  <a href="./README.md"><kbd><b>English</b></kbd></a>
-  <a href="./readmes/zh-CN.md"><kbd>简体中文</kbd></a>
-  <a href="./readmes/zh-TW.md"><kbd>繁體中文</kbd></a>
-  <a href="./readmes/ja.md"><kbd>日本語</kbd></a>
-  <a href="./readmes/ko.md"><kbd>한국어</kbd></a>
-  <a href="./readmes/es.md"><kbd>Español</kbd></a>
-  <a href="./readmes/fr.md"><kbd>Français</kbd></a><br>
-  <a href="./readmes/de.md"><kbd>Deutsch</kbd></a>
-  <a href="./readmes/pt-BR.md"><kbd>Português (Brasil)</kbd></a>
-  <a href="./readmes/it.md"><kbd>Italiano</kbd></a>
-  <a href="./readmes/ru.md"><kbd>Русский</kbd></a>
-  <a href="./readmes/tr.md"><kbd>Türkçe</kbd></a>
-  <a href="./readmes/vi.md"><kbd>Tiếng Việt</kbd></a>
-  <a href="./readmes/id.md"><kbd>Bahasa Indonesia</kbd></a>
-  <a href="./readmes/th.md"><kbd>ไทย</kbd></a>
-</p>
-<p align="center">
-  <a href="#installation">Install</a> · <a href="#quick-start">Quick start</a> · <a href="./readmes/develop/README.md">Docs</a> · <a href="./CHANGELOG.md">Changelog</a> · <a href="https://github.com/Lewen-Cai/browser-translate/issues">Issues</a>
-</p>
-<p align="center">
-  <a href="#install-chrome"><img src="https://img.shields.io/badge/Chrome-supported-4285F4?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chrome supported"></a>
-  <a href="#install-edge"><img src="https://img.shields.io/badge/Edge-supported-0078D7?style=flat-square&amp;logo=microsoftedge&amp;logoColor=white" alt="Edge supported"></a>
-  <a href="#install-firefox"><img src="https://img.shields.io/badge/Firefox-supported-FF7139?style=flat-square&amp;logo=firefoxbrowser&amp;logoColor=white" alt="Firefox supported"></a>
-</p>
-<p align="center">
-  <a href="https://github.com/Lewen-Cai/browser-translate/releases/latest"><img src="https://img.shields.io/github/v/release/Lewen-Cai/browser-translate?style=flat-square&amp;color=2563eb" alt="Latest release"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-2563eb?style=flat-square" alt="GPL-3.0"></a>
-  <a href="https://github.com/Lewen-Cai/browser-translate/actions/workflows/ci.yml"><img src="https://github.com/Lewen-Cai/browser-translate/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/Lewen-Cai/browser-translate/stargazers"><img src="https://img.shields.io/github/stars/Lewen-Cai/browser-translate?style=flat-square" alt="GitHub stars"></a>
-</p>
+## ติดตั้งด้วย Wizard (เริ่มตรงนี้)
 
-<a id="why"></a>
-## Why BrowserTranslate?
+ต้องมีเครื่อง **Mac** + **Google Chrome** + [Node.js](https://nodejs.org) เวอร์ชัน 18 ขึ้นไป + git
 
-- **Your model, your key.** Connect a cloud API, any OpenAI-compatible endpoint or a local runtime — or start with the free Microsoft and Google services, no key needed.
-- **Direct, no relay.** Text goes from your browser straight to the provider you chose. This project runs no server and collects no telemetry.
-- **Made for reading.** Selected text, whole pages and video subtitles, each with its own provider and model.
+**1. ดาวน์โหลดและรัน wizard** — เปิดแอป Terminal แล้ววางทีละบรรทัด
 
-<a id="features"></a>
-## Features
+```bash
+git clone https://github.com/gobank01/browser-translate-thai.git
+```
 
-- **Selection card** — select text and click the icon, or press **Alt+T** in hotkey mode. The answer streams into a card you can pin and drag; a short selection can get a dictionary entry.
-- **Full-page bilingual translation** — translations appear under the original as you scroll. Turn it on from the popup, or **Alt+A** in hotkey mode.
-- **Video subtitles** — bilingual captions on YouTube, Zoom and Canvas recordings and standard HTML5 players. No audio transcription.
-- **Many providers, several models each** — OpenAI, Claude, Gemini, DeepSeek, OpenRouter, Qwen and more, plus LM Studio, Ollama and other local runtimes. Keep several models per provider and choose one for each mode.
-- **Your own base prompt** — read the default and write your own templates.
-- **56 target languages**, an interface in **15 languages**, light and dark themes.
+```bash
+cd browser-translate-thai
+```
 
-<a id="installation"></a>
-## Install
+```bash
+node setup.mjs
+```
 
-Desktop **Chrome**, **Edge** and **Firefox**. Download packages from [Releases](https://github.com/Lewen-Cai/browser-translate/releases); the extension is not in any browser's store. Brave, Arc and other Chromium browsers use the Chrome package. Safari is not supported.
+**2. ตอบคำถามของ wizard** (ข้ามได้ทุกข้อ กด Enter)
 
-<a id="install-chrome"></a>
-### Chrome
+| คำถาม | ใส่ไหม | ได้อะไร |
+|---|---|---|
+| **OpenRouter key** | แนะนำ | คำแปลลื่น + เสียงพากย์ไทย หญิง (Marin, Coral) / ชาย (Cedar, Ash) ราว 1–2 บาทต่อคลิป 10 นาที · สมัครที่ [openrouter.ai/keys](https://openrouter.ai/keys) |
+| **ElevenLabs key** | ไม่บังคับ | เสียงพรีเมียมเพิ่ม (แพงกว่าราว 30 เท่า) · สร้างที่ [elevenlabs.io › API keys](https://elevenlabs.io/app/settings/api-keys) เปิดสิทธิ์ Text to Speech และ Voices (read) |
+| **บันทึกคลิปที่ดู** | ไม่บังคับ | จดคลิปที่ดูพร้อมบทพูดไทยเป็นโน้ตในเครื่อง |
 
-1. Download the latest `…-chrome.zip` and unzip it into a folder you will keep.
-2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and select the folder.
+ไม่ใส่ key เลยก็ใช้ได้: แปลด้วย Google ฟรี + เสียงไทย Kanya ของ Mac ฟรี
 
-<a id="install-edge"></a>
-### Edge
+**3. ใส่ส่วนขยายเข้า Chrome** — wizard จะ build ให้เสร็จแล้วเปิดโฟลเดอร์ให้
 
-Download the latest `…-edge.zip` (the same build as the Chrome package) and unzip it into a folder you will keep. Then open `edge://extensions`, turn on **Developer mode** in the left sidebar, click **Load unpacked** and select the folder.
+1. เปิด `chrome://extensions`
+2. เปิด **Developer mode** มุมขวาบน
+3. กด **Load unpacked** แล้วเลือกโฟลเดอร์ `dist/chrome-mv3` ในโฟลเดอร์ที่ดาวน์โหลดมา
+4. เปิดคลิป YouTube ภาษาอังกฤษ — พากย์ไทยเริ่มเอง
 
-<a id="install-firefox"></a>
-### Firefox
+> ใช้เสียงฟรีของ Mac แล้วไม่มีเสียง: System Settings › Accessibility › Spoken Content › System voice › Manage Voices… › Thai › **Kanya**
 
-Firefox 140 or later. Download the latest `…-firefox.xpi` — signed by Mozilla — open it in Firefox and confirm.
+## ทำอะไรได้บ้าง
 
-**Updating:** the settings page has a **Check for updates** button that finds the package for your browser. On Chrome and Edge, unzip the new version over the old folder and press **Reload** on the extensions page; on Firefox, open the new `.xpi`. Your settings are kept either way.
+- **พากย์ไทยอัตโนมัติ** เปิดคลิปภาษาต่างประเทศที่มีซับ (รวมซับอัตโนมัติ) แล้วได้ยินภาษาไทยตรงจังหวะภาพ เสียงต้นฉบับเบาลงเอง
+- **ใช้เสียงไทยของ YouTube ก่อน** คลิปที่ YouTube หรือครีเอเตอร์พากย์ไทยไว้แล้ว ระบบสลับไปใช้เสียงนั้นให้ ฟรีและตรงจังหวะ
+- **เสียงชาย/หญิงตามช่อง** ช่องผู้หญิงได้เสียงผู้หญิง ช่องผู้ชายได้เสียงผู้ชาย จำไว้ต่อช่อง
+- **บอกสถานะบนวิดีโอ** กำลังโหลดซับ → กำลังแปล → กำลังเตรียมเสียง → พร้อมแล้ว วิดีโอหยุดรอแล้วเล่นต่อเอง
+- **แปลเป็นภาษาพูด** กระชับ ฟังลื่น ไม่ใช่ภาษาเขียนแบบซับ
+- **กันเสียงพูดเกิน** ทุกประโยคถูกเทียบกับต้นฉบับ ถ้าโมเดลพูดไม่ตรง ระบบสั่งใหม่หรือสลับไปใช้เสียงสำรองให้เอง
+- **ดูซ้ำไม่เสียเงินซ้ำ** เสียงที่สร้างแล้วเก็บไว้ในเครื่อง
+- **แปลทั้งหน้าเว็บและข้อความที่เลือก** เป็นภาษาไทย (ความสามารถเดิมของ BrowserTranslate)
 
-<a id="quick-start"></a>
-## Quick start
+## วิธีใช้
 
-1. Everything starts switched off and no engine is chosen, so no text leaves your browser until you choose one. For a quick start without a key, click the popup's settings icon, open **Providers** and switch on Microsoft or Google, then choose it for each mode under **Translation engines** in the popup; then select some text on a webpage and click the blue icon.
-2. To use your own model, click the popup's settings icon, open **Providers**, choose a provider and paste its API key. Its models are listed for you — add the ones you want. The provider switches itself on.
-3. In **Translation → Translation engines**, choose a provider and model for selection cards, full pages and subtitles.
+| ทำอะไร | ทำยังไง |
+|---|---|
+| เปิด/ปิดพากย์คลิปนี้ | ปุ่ม **🔈TH** บนแถบวิดีโอ หรือ **Option+D** |
+| เปิด/ปิดพากย์อัตโนมัติทุกคลิป | คลิกไอคอนส่วนขยาย › สวิตช์ "พากย์ไทยอัตโนมัติ" |
+| เลือกเสียงให้ช่องนี้ | คลิกขวาที่ปุ่ม TH › เลือกเสียง (ระบบจำให้ช่องนั้น) |
+| เปลี่ยนเสียงเริ่มต้น | คลิกไอคอนส่วนขยาย › เลือกเสียง |
+| เพิ่ม/ลดเสียงพากย์ เสียงคลิป | คลิกไอคอนส่วนขยาย (ปุ่ม − +) หรือ คลิกขวาที่ปุ่ม TH |
+| ตั้งค่าละเอียด | คลิกไอคอนส่วนขยาย › ⚙️ › ซับไตเติล › การ์ด "พากย์ไทย" |
 
-The settings are split into **General**, **Translation**, **Providers**, **Subtitles** and **Data**. The [usage guide](./readmes/develop/usage.md) covers each feature in detail.
+คลิปที่พูดไทยอยู่แล้วจะไม่ถูกพากย์ · คลิปที่ไม่มีซับเลยยังพากย์ไม่ได้
 
-<a id="privacy"></a>
-## Privacy
+## ค่าใช้จ่าย
 
-No relay server, no analytics, no remote logging. The text you translate goes only to the service you selected. Settings and API keys stay in the browser's local extension storage and are **not encrypted**. The free Microsoft and Google options use unofficial public endpoints, with no affiliation and no warranty — read the [notice](./readmes/develop/free-services.md) before relying on them.
+| แบบ | ราคาโดยประมาณ ต่อคลิป 10 นาที |
+|---|---|
+| ไม่ใส่ key (Google แปล + เสียง Mac) | ฟรี |
+| OpenRouter (แปล + เสียง GPT Audio Mini) | 1–2 บาท |
+| ElevenLabs | ราว 35 บาท |
+| คลิปที่มีเสียงไทยของ YouTube | ฟรี |
 
-<a id="documentation"></a>
-## Documentation
+## อัปเดตเป็นเวอร์ชันใหม่ / เปลี่ยน key
 
-In English, under [`readmes/develop/`](./readmes/develop/README.md):
+```bash
+git pull
+```
 
-- [Usage guide](./readmes/develop/usage.md) — every feature, providers and models, thinking controls, base prompts
-- [Free translation services](./readmes/develop/free-services.md)
-- [Architecture, privacy and validation](./readmes/develop/architecture.md)
-- [Building from source](./readmes/develop/building.md) — `pnpm dev`, the Firefox build, packaging
+```bash
+node setup.mjs
+```
 
-Release notes are in the [changelog](./CHANGELOG.md); bugs and requests go to [Issues](https://github.com/Lewen-Cai/browser-translate/issues).
+แล้วกด **Reload** ที่การ์ดส่วนขยายใน `chrome://extensions` · ดูว่าแต่ละเวอร์ชันมีอะไรใหม่ใน [CHANGELOG](./CHANGELOG.md)
 
-<a id="acknowledgements"></a>
-## Acknowledgements
+## บันทึกคลิปที่ดู + แนะนำคลิปใหม่
 
-- [read-frog](https://github.com/mengxi-ream/read-frog) — GPL-3.0; an excellent project we learned from while building this extension.
-- [Lobe Icons](https://github.com/lobehub/lobe-icons) — MIT; provider logos, model vendor icons and the table that matches models to them. Trademarks remain with their respective owners and only identify the selected service.
+ถ้าเปิดไว้ตอนรัน wizard ทุกคลิปที่ดูเกิน 1 นาทีจะถูกจดเป็นไฟล์ `.md` ในโฟลเดอร์ที่เลือก (ชื่อคลิป ช่อง เวลาที่ดู บทพูดไทย) พร้อม `INDEX.md` รวมรายการ เปิดใน Obsidian ได้
 
-<a id="license"></a>
-## License
+มี [Claude Code](https://claude.com/claude-code)? ให้อ่านประวัติแล้วแนะนำคลิปใหม่:
 
-[GPL-3.0](./LICENSE). Distributed derivative works must comply with its source-code and licensing obligations. Third-party assets retain their respective licenses.
+```bash
+watchlog/recommend.sh
+```
+
+## ความเป็นส่วนตัว
+
+- key อยู่ในไฟล์ `.env.local` ในเครื่องคุณเท่านั้น (ไม่ขึ้น git) และถูกฝังในโฟลเดอร์ `dist/` ที่ build ออกมา **อย่าแจกโฟลเดอร์ `dist/` หรือไฟล์ zip ที่ build เอง** ให้แจกลิงก์ repo นี้แทน แล้วให้แต่ละคนรัน wizard ใส่ key ของตัวเอง
+- ข้อความซับส่งไปเฉพาะผู้ให้บริการแปลที่คุณเลือก และข้อความไทยส่งไปเฉพาะผู้ให้บริการเสียงที่คุณเลือก
+- บันทึกคลิปที่ดูอยู่ในเครื่องคุณเท่านั้น
+
+## ที่มาและสัญญาอนุญาต
+
+ต่อยอดจาก [BrowserTranslate](https://github.com/Lewen-Cai/browser-translate) ของ Lewen-Cai · README ต้นฉบับอ่านได้ที่ [readmes/](./readmes/en.md) · สัญญาอนุญาต [GPL-3.0](./LICENSE) เหมือนต้นฉบับ

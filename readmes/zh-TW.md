@@ -2,7 +2,7 @@
 <h1 align="center">BrowserTranslate</h1>
 <p align="center"><strong>用你選擇的模型，閱讀網頁與影片字幕。</strong><br>開源瀏覽器翻譯 · 自備 API Key · 無中繼伺服器 · 零遙測</p>
 <p align="center">
-  <a href="../README.md"><kbd>English</kbd></a>
+  <a href="./en.md"><kbd>English</kbd></a>
   <a href="./zh-CN.md"><kbd>简体中文</kbd></a>
   <a href="./zh-TW.md"><kbd><b>繁體中文</b></kbd></a>
   <a href="./ja.md"><kbd>日本語</kbd></a>

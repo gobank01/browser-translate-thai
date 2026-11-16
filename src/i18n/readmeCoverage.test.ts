@@ -10,13 +10,15 @@ const root = process.cwd();
 // English stays at the repository root, which is the only place GitHub reads a
 // landing page from. Every other language lives in readmes/, under its own
 // locale code.
-const pathFor = (locale: string) => locale === 'en' ? 'README.md' : `readmes/${locale}.md`;
-const others = LOCALES.filter((l) => l !== 'en');
+// The Thai-dub fork's own landing page (Thai, setup wizard first) is the root
+// README.md; the upstream README lives in readmes/ in every language, English
+// included.
+const pathFor = (locale: string) => `readmes/${locale}.md`;
 
 /** Where a language chip should point, from the document doing the pointing. */
 const navTarget = (from: string, to: string) => {
-  if (to === 'en') return from === 'en' ? './README.md' : '../README.md';
-  return from === 'en' ? `./readmes/${to}.md` : `./${to}.md`;
+  void from;
+  return `./${to}.md`;
 };
 
 /**
@@ -72,7 +74,7 @@ describe('localized README coverage', () => {
   it('keeps English at the root, every other language in readmes/, and docs in readmes/develop/', () => {
     expect(readdirSync(root).filter((name) => /^README.*\.md$/.test(name))).toEqual(['README.md']);
     expect(readdirSync(path.join(root, 'readmes')).filter((name) => name.endsWith('.md')).sort())
-      .toEqual([...others].sort().map((l) => `${l}.md`));
+      .toEqual([...LOCALES].sort().map((l) => `${l}.md`));
     expect(readdirSync(path.join(root, DEVELOP)).sort()).toEqual([...developDocs].sort());
     expect(readdirSync(root)).not.toContain('README_CN.md');
   });
@@ -85,7 +87,7 @@ describe('localized README coverage', () => {
       const body = content.slice(headerText.length);
       const header = document.createElement('div');
       header.innerHTML = headerText;
-      const up = locale === 'en' ? '.' : '..';
+      const up = '..';
 
       it('centers the hero and links every language exactly once, marking itself', () => {
         expect(header.querySelector('h1[align="center"]')?.textContent).toBe('BrowserTranslate');
@@ -125,7 +127,7 @@ describe('localized README coverage', () => {
           expect(body, `settings label: ${key}`).toContain(MESSAGES[locale][key]);
         }
         for (const doc of ['usage.md', 'free-services.md', 'architecture.md', 'building.md']) {
-          expect(body, `links ${doc}`).toContain(`${locale === 'en' ? './readmes' : '.'}/develop/${doc}`);
+          expect(body, `links ${doc}`).toContain(`./develop/${doc}`);
         }
       });
 
@@ -159,5 +161,22 @@ describe('English documentation in readmes/develop/', () => {
     expect(all).toMatch(/12[,.\s]?000/);
     for (const command of commands) expect(all, command).toContain(command);
     expect(all).toContain('../../assets/framework.png');
+  });
+});
+
+describe('Thai-dub landing page (README.md)', () => {
+  const content = readFileSync(path.join(root, 'README.md'), 'utf8');
+
+  it('is in Thai and puts the setup wizard first', () => {
+    const firstSection = content.split(/^## /m)[1] ?? '';
+    expect(firstSection).toMatch(/Wizard/);
+    expect(firstSection).toContain('node setup.mjs');
+    expect(firstSection).toContain('git clone https://github.com/gobank01/browser-translate-thai.git');
+    // Thai throughout: every heading is Thai.
+    for (const heading of content.match(/^#{1,2} .+$/gm) ?? []) expect(heading, heading).toMatch(/[฀-๿]/);
+  });
+
+  it('uses valid local links', () => {
+    for (const link of localLinks(content)) checkLink('README.md', link, []);
   });
 });

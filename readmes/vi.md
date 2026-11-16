@@ -2,7 +2,7 @@
 <h1 align="center">BrowserTranslate</h1>
 <p align="center"><strong>Đọc trang web và phụ đề bằng mô hình bạn lựa chọn.</strong><br>Mã nguồn mở · Khóa API của bạn · Không máy chủ trung gian · Không thu thập dữ liệu đo lường</p>
 <p align="center">
-  <a href="../README.md"><kbd>English</kbd></a>
+  <a href="./en.md"><kbd>English</kbd></a>
   <a href="./zh-CN.md"><kbd>简体中文</kbd></a>
   <a href="./zh-TW.md"><kbd>繁體中文</kbd></a>
   <a href="./ja.md"><kbd>日本語</kbd></a>
