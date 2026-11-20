@@ -55,37 +55,40 @@ async function main() {
   const old = readEnv();
   const env = { WXT_THAI_DUB: '1' };
 
-  // 1. Translation
-  say('1) OpenRouter key (แนะนำ) — ได้ทั้งคำแปลที่ลื่นกว่า และเสียงพากย์ไทยชาย/หญิง (ElevenLabs, Microsoft, GPT)');
-  say('   ราว 7 บาทต่อคลิป 10 นาทีด้วยเสียง ElevenLabs (ถูกลงได้ถึง 1–2 บาท) · สมัครที่ https://openrouter.ai/keys');
-  say('   ไม่ใส่ = Google แปลฟรี + เสียงไทย Kanya ของ Mac ฟรี');
+  // 1. Voice — the one key most people need.
+  say('1) ElevenLabs key (แนะนำ ใส่ตัวนี้ตัวเดียวก็ใช้ได้) — เสียงพากย์ไทยชาย/หญิงที่เป็นธรรมชาติ');
+  say('   สร้างที่ https://elevenlabs.io/app/settings/api-keys (เปิดสิทธิ์ Text to Speech และ Voices: read)');
+  say('   ใช้เครดิตแพ็กเกจ ElevenLabs ของคุณ · ไม่ใส่ = เสียงไทย Kanya ของ Mac ฟรี');
+  const el = await ask('   ElevenLabs key', old.WXT_ELEVENLABS_KEY ? '(ใช้ของเดิม)' : '');
+  const elKey = el === '(ใช้ของเดิม)' ? old.WXT_ELEVENLABS_KEY : el;
+  if (elKey) {
+    // Anna (female) and Somchai (male) are good Thai voices; pick others from your account if you like.
+    const DEFAULT_VOICES = 'Anna:brM9iIbwDREZaWL8luun:female,Somchai:XLXcyPK1jTjw1pYLLcM9:male';
+    let picks = [];
+    try {
+      const voices = await elevenVoices(elKey);
+      say(`   ✓ key ใช้ได้ · ในบัญชีมี ${voices.length} เสียง`);
+      if (voices.length && await yes('   เลือกเสียงเองจากบัญชี? (ไม่เลือก = ใช้ Anna/Somchai)', false)) {
+        picks = [await pickVoice(voices, 'female'), await pickVoice(voices, 'male')]
+          .map((v, i) => v && `${v.name}:${v.id}:${i ? 'male' : 'female'}`).filter(Boolean);
+      }
+    } catch (e) {
+      say(`   (อ่านรายชื่อเสียงไม่ได้: ${e.message} — ใช้ Anna/Somchai)`);
+    }
+    env.WXT_ELEVENLABS_KEY = elKey;
+    env.WXT_DUB_VOICES = picks.length ? picks.join(',') : DEFAULT_VOICES;
+    say('   ✓ ตั้งเสียงแล้ว');
+  }
+
+  // 2. Translation and the smart extras.
+  say('\n2) (ไม่บังคับ) OpenRouter key — คำแปลลื่นกว่า + สรุปบทเรียน + เลือกเสียงชาย/หญิงตามช่องและตามคนพูด');
+  say('   ราวไม่กี่บาทต่อชั่วโมง · สมัครที่ https://openrouter.ai/keys');
+  say('   ไม่ใส่ = แปลด้วย Google ฟรี (ฟีเจอร์ที่ต้องใช้ AI จะปิดไว้)');
   const or = await ask('   OpenRouter key', old.WXT_OPENROUTER_KEY ? '(ใช้ของเดิม)' : '');
   const orKey = or === '(ใช้ของเดิม)' ? old.WXT_OPENROUTER_KEY : or;
   if (orKey) {
     if (await checkOpenRouter(orKey).catch(() => false)) { env.WXT_OPENROUTER_KEY = orKey; say('   ✓ key ใช้ได้'); }
     else say('   ✗ key ใช้ไม่ได้ — จะใช้ Google แปลฟรีแทน');
-  }
-
-  // 2. Voice
-  say('\n2) (ไม่บังคับ) ElevenLabs key — ใช้เสียงจากบัญชี ElevenLabs ตัวเองโดยตรง (https://elevenlabs.io/app/settings/api-keys)');
-  say('   ต้องเปิดสิทธิ์ Text to Speech และ Voices (read) ให้ key · เพิ่มเสียงไทยที่ชอบจาก Voice Library เข้าบัญชีก่อน');
-  say('   ข้ามได้เลย ถ้าใส่ OpenRouter key แล้ว');
-  const el = await ask('   ElevenLabs key', old.WXT_ELEVENLABS_KEY ? '(ใช้ของเดิม)' : '');
-  const elKey = el === '(ใช้ของเดิม)' ? old.WXT_ELEVENLABS_KEY : el;
-  if (elKey) {
-    try {
-      const voices = await elevenVoices(elKey);
-      if (!voices.length) throw new Error('ยังไม่มีเสียงในบัญชี');
-      const picks = [await pickVoice(voices, 'female'), await pickVoice(voices, 'male')]
-        .map((v, i) => v && `${v.name}:${v.id}:${i ? 'male' : 'female'}`).filter(Boolean);
-      if (picks.length) {
-        env.WXT_ELEVENLABS_KEY = elKey;
-        env.WXT_DUB_VOICES = picks.join(',');
-        say('   ✓ ตั้งเสียงแล้ว');
-      } else say('   ไม่ได้เลือกเสียง — ใช้เสียง Mac ฟรี');
-    } catch (e) {
-      say(`   ✗ อ่านรายชื่อเสียงไม่ได้ (${e.message}) — ใช้เสียง Mac ฟรี`);
-    }
   }
 
   // 3. Watch log

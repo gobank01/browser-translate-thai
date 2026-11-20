@@ -46,6 +46,8 @@ export interface VideoDetails {
   lengthSeconds: number;
   keywords: string[];
   shortDescription: string;
+  /** YouTube's category, e.g. "Music", "Education". */
+  category?: string;
 }
 
 /** Ask the MAIN-world bridge for the captured (pot-bearing) transcript of a language. */

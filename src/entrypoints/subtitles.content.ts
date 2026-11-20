@@ -14,7 +14,8 @@ import { PROVIDERS, type ProviderId } from '~/core/providers/registry';
 import type { AppData } from '~/storage/schema';
 import { DEFAULT_DUB_SETTINGS, type DubSettings } from '~/core/dub/settings';
 import { routeProblem } from '~/core/engines/routing';
-import type { ChannelVoiceRequest, LessonRequest, LessonResponse, CloudTtsRequest, CloudTtsResponse, OpenOptionsRequest, RememberVoiceRequest } from '~/messaging/types';
+import type { SpeakerLabels, SpeakerLine } from '~/core/dub/speakers';
+import type { ChannelVoiceRequest, LessonRequest, LessonResponse, SpeakersRequest, SpeakersResponse, CloudTtsRequest, CloudTtsResponse, OpenOptionsRequest, RememberVoiceRequest } from '~/messaging/types';
 import { CLOUD_TTS } from '~/core/dub/cloudVoice';
 import { startWatchTracker } from './content/watchTracker';
 import { requestCaptionTracks } from './content/videoSubs/requestCaptionTracks';
@@ -126,6 +127,8 @@ export default defineContentScript({
       dubSettings = data.settings.dub;
       /** The channel of the video being dubbed, for remembering a voice picked for it. */
       let channelId = '';
+      /** Title and description of this video, for working out who speaks. */
+      let videoInfo: Promise<{ title: string; description: string }> | undefined;
       const subtitleReady = routeProblem(data.settings.engines.subtitle, data.providers) === null;
 
       subs = createVideoSubTranslator({
@@ -181,7 +184,18 @@ export default defineContentScript({
             void client.patchSettings({ dub: dubSettings });
           },
           hasEngine: () => subtitleReady,
-          // Study notes need a model: only builds with an OpenRouter key.
+          // Study notes and speaker labels need a model: only builds with an OpenRouter key.
+          ...(import.meta.env.WXT_OPENROUTER_KEY && site.id === 'youtube' && {
+            labelSpeakers: async (lines: SpeakerLine[], known: SpeakerLabels['speakers']) => {
+              videoInfo ??= requestCaptionTracks().then((r) => ({
+                title: r.details?.title ?? document.title, description: r.details?.shortDescription ?? '',
+              })).catch(() => ({ title: document.title, description: '' }));
+              const req: SpeakersRequest = { type: 'dub:speakers', video: await videoInfo, lines, known };
+              const res = await chrome.runtime.sendMessage(req) as SpeakersResponse | undefined;
+              if (!res?.ok) throw new Error(res?.error ?? 'no response');
+              return res.labels;
+            },
+          }),
           ...(import.meta.env.WXT_OPENROUTER_KEY && {
             makeLesson: async (lines: Array<{ startMs: number; text: string }>) => {
               const req: LessonRequest = { type: 'learn:lesson', title: document.title.replace(/ - YouTube$/, ''), lines };
@@ -248,6 +262,7 @@ export default defineContentScript({
             nativeSwitched: t('dubNativeSwitched', locale),
             nativeAlready: t('dubNativeAlready', locale),
             useOwnDub: t('dubUseOwn', locale),
+            alreadyThai: t('dubAlreadyThai', locale),
             lessonMenu: t('dubLessonMenu', locale),
             lesson: {
               title: t('dubLessonTitle', locale), loading: t('dubLessonLoading', locale),

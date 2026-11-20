@@ -2,7 +2,7 @@
   "name": "browser-translate",
   "description": "Open-source LLM-powered translation extension (bring your own key).",
   "private": true,
-  "version": "0.3.4",
+  "version": "0.3.5",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -18,7 +18,8 @@
     "format": "prettier --write src",
     "typecheck": "wxt prepare && tsc --noEmit",
     "postinstall": "wxt prepare",
-    "usage": "node scripts/usage.mjs"
+    "usage": "node scripts/usage.mjs",
+    "recommend": "bash watchlog/recommend.sh"
   },
   "dependencies": {
     "lucide-preact": "^1.66.0",

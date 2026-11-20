@@ -261,6 +261,7 @@ export const zhCN: Record<StringKey, string> = {
   dubNativeSwitched: "Playing YouTube's own Thai audio (free, in sync) ·",
   dubNativeAlready: 'This video is already playing Thai audio ·',
   dubUseOwn: 'Use our dub instead',
+  dubAlreadyThai: 'This video is already in Thai — nothing to translate or dub',
   dubPreferNative: "Use a video's own Thai audio track first (free) when it has one",
   dubLessonMenu: "Summarize what I've watched (Option+S)",
   dubLessonTitle: 'Lesson so far',

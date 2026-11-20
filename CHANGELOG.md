@@ -2,13 +2,42 @@
 
 All notable changes will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.5] — 2026-11-20
+
+### Added
+- **A voice per speaker.** In interviews and podcasts each line is dubbed in
+  the voice of whoever says it — a woman in a female voice, a man in a male
+  one, each person keeping theirs. Speakers are worked out a minute ahead by
+  the model from turn markers (`>>`, `Name:`), the flow of questions and
+  answers, and the names in the title and description; a video with one
+  speaker keeps the channel's voice. Needs an OpenRouter key; adds well under
+  a baht an hour and no ElevenLabs credits.
+
+### Changed
+- **Thai videos are left alone.** Nothing starts by itself unless the video's
+  language is known to be foreign; a video without auto-captions counts as
+  Thai when its title is in Thai; and captions that are already Thai are
+  neither translated nor dubbed (one note says so).
+- **Setup asks for the ElevenLabs key first** and that key alone is enough:
+  Google translates for free and ElevenLabs speaks (Anna/Somchai unless you
+  pick other voices from your account). The OpenRouter key is optional and
+  adds better translation, lessons and voices matched to the channel and the
+  speaker.
+- **Music stays out.** Videos in YouTube's Music category are not dubbed by
+  themselves and are not written to the watch log; Thai videos still are
+  logged, only not translated.
+
+### Fixed
+- The watch-log helper copes with a record missing a field instead of failing
+  (it runs on macOS's Python 3.9).
+
 ## [0.3.4] — 2026-11-20
 
 ### Changed
 - **Your own ElevenLabs account now speaks with eleven_v4_turbo** (was
   eleven_v4): the same voices for half the credits — about half an hour of
-  dubbing a day fits the Creator plan. Clips already made with v4 stay cached;
-  new lines use turbo.
+  dubbing a day fits the Creator plan. (Audio is cached per model, so lines
+  already made with v4 are made again with turbo the next time they play.)
 
 ## [0.3.3] — 2026-11-20
 

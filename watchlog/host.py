@@ -69,13 +69,13 @@ def note(rec, entry):
     lines = [
         '---',
         f'video_id: {rec["videoId"]}',
-        f'title: {yaml_str(rec["title"])}',
-        f'channel: {yaml_str(rec["channel"])}',
-        f'url: {rec["url"]}',
+        f'title: {yaml_str(rec.get("title", ""))}',
+        f'channel: {yaml_str(rec.get("channel", ""))}',
+        f'url: {rec.get("url", "")}',
         f'language: {rec.get("language") or ""}',
-        f'duration_s: {rec["durationS"]}',
+        f'duration_s: {rec.get("durationS", 0)}',
         f'watched_s: {entry["watched_s"]}',
-        f'reached_s: {rec["reachedS"]}',
+        f'reached_s: {rec.get("reachedS", 0)}',
         f'dubbed: {str(entry["dubbed"]).lower()}',
         f'first_watched: {entry["first_watched"]}',
         f'last_watched: {entry["last_watched"]}',
@@ -84,9 +84,9 @@ def note(rec, entry):
         'tags: [watched, youtube]',
         '---',
         '',
-        f'# {rec["title"]}',
+        f'# {rec.get("title", "")}',
         '',
-        f'**ช่อง:** {rec["channel"]} · [เปิดคลิป]({rec["url"]}) · ยาว {minutes(rec["durationS"])} · '
+        f'**ช่อง:** {rec.get("channel", "")} · [เปิดคลิป]({rec.get("url", "")}) · ยาว {minutes(rec.get("durationS", 0))} · '
         f'ดูไป {minutes(entry["watched_s"])}' + (' · พากย์ไทย' if entry['dubbed'] else ''),
         '',
     ]
@@ -134,7 +134,7 @@ def write(path, text):
 
 
 def save(rec):
-    if not re.fullmatch(r'[\w-]{6,20}', rec.get('videoId', '')):
+    if not re.fullmatch(r'[\w-]{6,20}', rec.get("videoId", "")):
         raise ValueError('bad videoId')
     os.makedirs(OUT, exist_ok=True)
     idx_path = os.path.join(OUT, 'index.json')
@@ -147,12 +147,13 @@ def save(rec):
     # One sitting is one session; its total grows with each flush, so the
     # session's figure is replaced, not added to.
     session = rec.get('session') or now
-    entry['sessions'][session] = rec['watchedS']
+    entry['sessions'][session] = rec.get("watchedS", 0)
     entry.update({
-        'title': rec['title'], 'channel': rec['channel'], 'url': rec['url'],
-        'language': rec.get('language') or '', 'duration_s': rec['durationS'],
+        'title': rec.get("title", ""), 'channel': rec.get("channel", ""), 'url': rec.get("url", ""),
+        'language': rec.get('language') or '', 'duration_s': rec.get("durationS", 0),
         'watched_s': sum(entry['sessions'].values()),
-        'dubbed': bool(entry.get('dubbed')) or bool(rec['dubbed']),
+        'reached_s': max(entry.get('reached_s', 0), rec.get("reachedS", 0)),
+        'dubbed': bool(entry.get('dubbed')) or bool(rec.get("dubbed", False)),
         'last_watched': now,
     })
     index[vid] = entry
@@ -181,7 +182,7 @@ def main():
         log(f'ok {msg.get("videoId")} {msg.get("watchedS")}s {msg.get("title", "")[:60]}')
         reply({'ok': True})
     except Exception as e:  # noqa: BLE001 — report, never crash the browser side
-        log(f'error {type(e).__name__}: {e}')
+        log(f'error {type(e).__name__}: {e} · keys {sorted(msg)[:20]}')
         reply({'ok': False, 'error': str(e)})
 
 

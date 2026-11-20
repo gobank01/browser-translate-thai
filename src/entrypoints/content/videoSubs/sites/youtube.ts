@@ -2,6 +2,7 @@ import { requestCaptionTracks } from '../requestCaptionTracks';
 import { fetchTranscript, pickTrack } from '../fetchTranscript';
 import { fetchTranscriptText } from '../transcriptBridge';
 import { switchToNativeAudio } from '../nativeAudio';
+import { thaiShare } from '~/core/dub/thai';
 import type { CaptionsResponse } from '../bridgeProtocol';
 import type { SiteMatcher, SiteProbe, SubtitleSite } from '../site';
 import type { Cue } from '~/core/subtitles/types';
@@ -68,7 +69,13 @@ export function createYouTubeSite(): SubtitleSite {
       // Auto-generated captions are made from the audio, so their language is
       // the language being spoken — whatever track the viewer has on screen.
       const asr = found.tracks.find((t) => t.kind === 'asr');
-      return { kind: 'ready', languageCode: track.languageCode, spokenLanguage: asr?.languageCode };
+      // No auto-captions: a title in Thai script is the best remaining clue
+      // that the video is spoken in Thai.
+      const thaiTitle = thaiShare(found.details?.title ?? '') > 0.3 ? 'th' : undefined;
+      return {
+        kind: 'ready', languageCode: track.languageCode, spokenLanguage: asr?.languageCode ?? thaiTitle,
+        music: found.details?.category === 'Music',
+      };
     },
 
     nativeAudio: (lang) => switchToNativeAudio(lang),

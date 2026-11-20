@@ -156,7 +156,18 @@ export interface LessonRequest {
 
 export type LessonResponse = { ok: true; lesson: import('~/core/dub/lesson').Lesson } | { ok: false; error: string };
 
+/** Content script → background: who speaks these subtitle lines, and their gender. */
+export interface SpeakersRequest {
+  type: 'dub:speakers';
+  video: { title: string; description: string };
+  lines: import('~/core/dub/speakers').SpeakerLine[];
+  known: import('~/core/dub/speakers').SpeakerLabels['speakers'];
+}
+
+export type SpeakersResponse = { ok: true; labels: import('~/core/dub/speakers').SpeakerLabels } | { ok: false; error: string };
+
 export type Request =
+  | SpeakersRequest
   | LessonRequest
   | ChannelVoiceRequest
   | RememberVoiceRequest

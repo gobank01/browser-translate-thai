@@ -8,6 +8,7 @@ import { mountSubsButton, removeSubsButton, type SubsButtonHandle } from './butt
 import type { SubtitleSite } from './site';
 import { activeCue } from '~/core/subtitles/activeCue';
 import type { Cue } from '~/core/subtitles/types';
+import { mostlyThai } from '~/core/dub/thai';
 import type { SubtitlePosition, SubtitleStyle } from '~/core/subtitles/style';
 import { translateBatch, abortTranslate } from '~/messaging/client';
 import type { TranslateBatchRequest } from '~/messaging/types';
@@ -15,6 +16,8 @@ import { mountDubButton, removeDubButton, setDubStatus, showDubToast, showLesson
 import { createDubScheduler, mergeCues, type DubScheduler, type DubLine } from '~/core/dub/scheduler';
 import { createDucker, type Ducker } from '~/core/dub/ducking';
 import { loadVoices, pickVoice } from '~/core/dub/voice';
+import type { SpeakerLabels, SpeakerLine } from '~/core/dub/speakers';
+import { voiceOfGender } from '~/core/dub/channelVoice';
 import { cloudVoiceId, sameProviderVoices, createCloudVoice, type PreparedEngine } from '~/core/dub/cloudVoice';
 import type { SpeechEngine } from '~/core/dub/scheduler';
 import type { DubSettings } from '~/core/dub/settings';
@@ -51,6 +54,8 @@ export interface DubStrings extends DubUiStrings {
   nativeAlready: string;
   /** Action: dub it ourselves anyway. */
   useOwnDub: string;
+  /** The video's captions are Thai already. */
+  alreadyThai: string;
   /** The "summarize what I've watched" menu item and its panel. */
   lessonMenu: string;
   lesson: LessonStrings;
@@ -85,6 +90,11 @@ export interface DubDeps {
   voiceForVideo?: () => Promise<string | null>;
   /** The viewer picked `voiceURI` from the player menu: keep it for this video's channel. */
   rememberVoice?: (voiceURI: string) => void;
+  /**
+   * Label who speaks each line and their gender, given the speakers found so
+   * far (absent: one voice for the whole video).
+   */
+  labelSpeakers?: (lines: SpeakerLine[], known: SpeakerLabels['speakers']) => Promise<SpeakerLabels>;
   /** Build a study note from the part already watched (absent: no lesson feature). */
   makeLesson?: (lines: Array<{ startMs: number; text: string }>) => Promise<LessonView>;
   /** Fetch a cloud voice's audio for one line (absent: system voices only). */
@@ -111,6 +121,14 @@ export interface VideoSubTranslator {
 
 /** Longest the video is held waiting for the dub before it plays regardless. */
 const HOLD_MAX_MS = 20_000;
+/** Separates voice and text in a line's audio key. */
+const VOICE_SEP = '\u0001';
+/** How far ahead speakers are worked out, how many lines at a time, and when to stop trying. */
+const SPEAKER_AHEAD_MS = 60_000;
+const SPEAKER_BATCH = 40;
+const SPEAKER_MAX_ERRORS = 3;
+/** A line this close to starting goes ahead in the default voice rather than wait for its speaker. */
+const SPEAKER_WAIT_MS = 4000;
 /** Longest a playing video is paused for one late line before it carries on. */
 const GAP_HOLD_MAX_MS = 6000;
 /** How long "ready" stays on screen. */
@@ -128,6 +146,8 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
   let rafId = 0;
   let pumpTarget: HTMLVideoElement | null = null;
   let enabledMediaKey = '';
+  /** The captions turned out to be Thai already, so nothing was translated. */
+  let alreadyThai = false;
   let dubButton: DubButtonHandle | null = null;
   let dubbing = false;
   let dubScheduler: DubScheduler | null = null;
@@ -199,7 +219,10 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
       if (vol !== dubVolumeAt) { setDubVolume?.(vol / 100); dubVolumeAt = vol; }
       dubScheduler.tick();
     }
-    if (dubbing) updateStatus();
+    if (dubbing) {
+      updateStatus();
+      if (dubScheduler) pumpSpeakers((site.findVideo()?.currentTime ?? 0) * 1000);
+    }
     rafId = requestAnimationFrame(tick);
   }
 
@@ -236,6 +259,12 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     }
     if (!on) return; // reader toggled off during the await
     if (fetched.length === 0) { deps.notify(deps.strings.noCaptions); disable(); return; }
+    // Captions already in Thai, for a Thai target: nothing to translate or dub.
+    if (deps.getTargetLang().toLowerCase().startsWith('th') && mostlyThai(fetched)) {
+      alreadyThai = true;
+      disable();
+      return;
+    }
     cues = fetched;
 
     translator = createCueTranslator({
@@ -348,7 +377,8 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     const spoken = probe.kind === 'ready'
       ? (probe.spokenLanguage ?? probe.languageCode)?.toLowerCase().split('-')[0]
       : undefined;
-    if (s?.enabled && s.autoStart && !dubbing && probe.kind !== 'live' && spoken !== target) {
+    // Unknown language: do nothing by itself rather than spend on a Thai video.
+    if (s?.enabled && s.autoStart && !dubbing && probe.kind === 'ready' && !probe.music && spoken && spoken !== target) {
       void toggleDub().then(() => {
         if (!dubbing || !deps.dub) return;
         // Say why a voice just started, and how to stop it.
@@ -404,7 +434,13 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     if (cloudId) {
       const fetchAudio = dub.fetchCloudAudio!;
       let setVolume: (v: number) => void;
-      ({ synth, engine, setVolume } = createCloudVoice({ fetchAudio: (text) => fetchAudio(text, cloudId) }));
+      // Each line's audio is keyed by voice and text, so speakers can differ line by line.
+      ({ synth, engine, setVolume } = createCloudVoice({
+        fetchAudio: (key) => {
+          const [uri, text] = key.split(VOICE_SEP) as [string, string];
+          return fetchAudio(text, uri);
+        },
+      }));
       setDubVolume = setVolume;
       dubVolumeAt = dub.getSettings().volume;
     } else {
@@ -422,7 +458,7 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     }
     if (!on) await enable();
     // enable() switches itself off when there is nothing to translate.
-    if (!on) { stopDub(); dubToast(s.noSubs); return; }
+    if (!on) { stopDub(); dubToast(alreadyThai ? s.alreadyThai : s.noSubs); return; }
     if (!dubbing) return; // turned off again while the transcript loaded
     const video = site.findVideo();
     if (!translator || cues.length === 0 || !video) {
@@ -445,7 +481,10 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
           if (text !== undefined) parts.push(text);
           else if (!tr.isFailed(id)) return null; // still translating
         }
-        return parts.join(' ').trim();
+        const text = parts.join(' ').trim();
+        if (!text || !cloudId) return text;
+        const uri = voiceForLine(line, video.currentTime * 1000);
+        return uri ? `${uri}${VOICE_SEP}${text}` : null;
       },
       getSettings: dub.getSettings,
       getVoice: () => voice,
@@ -520,6 +559,7 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
   }
 
   function stopDub(): void {
+    resetSpeakers();
     release();
     readySince = 0;
     setDubStatus(site.selectors, null);
@@ -534,6 +574,61 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
   }
 
   let lastLesson: LessonView | null = null;
+
+  // --- who speaks each line -------------------------------------------------
+  let speakerOf = new Map<number, string>();
+  let speakerGenders: SpeakerLabels['speakers'] = {};
+  let speakerAsked = new Set<number>();
+  let speakerBusy = false;
+  let speakerErrors = 0;
+
+  function resetSpeakers(): void {
+    speakerOf = new Map();
+    speakerGenders = {};
+    speakerAsked = new Set();
+    speakerBusy = false;
+    speakerErrors = 0;
+  }
+
+  /** Label the lines due in the next minute that have no speaker yet. */
+  function pumpSpeakers(nowMs: number): void {
+    const label = deps.dub?.labelSpeakers;
+    if (!label || speakerBusy || speakerErrors >= SPEAKER_MAX_ERRORS) return;
+    const due = cues.filter((c) => c.endMs >= nowMs - 2000 && c.startMs <= nowMs + SPEAKER_AHEAD_MS
+      && !speakerOf.has(c.id) && !speakerAsked.has(c.id)).slice(0, SPEAKER_BATCH);
+    if (!due.length) return;
+    // A few lines already labelled before them, so turns carry over.
+    const first = cues.indexOf(due[0]!);
+    const context = cues.slice(Math.max(0, first - 6), first).filter((c) => speakerOf.has(c.id));
+    for (const c of due) speakerAsked.add(c.id);
+    speakerBusy = true;
+    const toLine = (c: Cue): SpeakerLine => ({ id: c.id, text: c.text, ...(c.speaker && { speaker: c.speaker }) });
+    void label([...context, ...due].map(toLine), speakerGenders)
+      .then((r) => {
+        speakerGenders = { ...speakerGenders, ...r.speakers };
+        for (const [id, sp] of Object.entries(r.lines)) speakerOf.set(Number(id), sp);
+      })
+      .catch(() => {
+        speakerErrors++;
+        for (const c of due) speakerAsked.delete(c.id);
+      })
+      .finally(() => { speakerBusy = false; });
+  }
+
+  /**
+   * The voice for one line: the channel's voice for a video with one speaker,
+   * else a voice of the speaker's gender. Null while the speaker is still
+   * being worked out and the line is not yet due.
+   */
+  function voiceForLine(line: DubLine, nowMs: number): string | null {
+    if (!deps.dub?.labelSpeakers || speakerErrors >= SPEAKER_MAX_ERRORS) return activeVoiceURI;
+    const speaker = line.ids.map((id) => speakerOf.get(id)).find(Boolean);
+    if (!speaker) return line.startMs - nowMs > SPEAKER_WAIT_MS ? null : activeVoiceURI;
+    const known = Object.values(speakerGenders).filter((g) => g !== 'unknown');
+    const gender = speakerGenders[speaker];
+    if (new Set(known).size < 2 || !gender || gender === 'unknown') return activeVoiceURI;
+    return voiceOfGender(gender, activeVoiceURI) ?? activeVoiceURI;
+  }
 
   async function showLesson(): Promise<void> {
     const dub = deps.dub;

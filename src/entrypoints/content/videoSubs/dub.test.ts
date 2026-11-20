@@ -36,7 +36,7 @@ const DUB_STRINGS: DubDeps['strings'] = {
   autoStarted: 'auto {lang}', stop: 'stop', uiLocale: 'th',
   statusLoading: 'loading', statusTranslating: 'translating {n}/{total}', statusVoicing: 'voicing {n}/{total}',
   statusReady: 'ready', statusHeld: 'held',
-  nativeSwitched: 'native switched', nativeAlready: 'native already', useOwnDub: 'own',
+  nativeSwitched: 'native switched', nativeAlready: 'native already', useOwnDub: 'own', alreadyThai: 'already thai',
   lessonMenu: 'lesson', lesson: { title: 'T', loading: 'L', failed: 'F', points: 'P', terms: 'Te', close: 'C' },
 };
 
@@ -294,6 +294,23 @@ describe('Thai dub in the player', () => {
     panel.querySelector<HTMLButtonElement>('.at')!.click();
     expect(video().currentTime).toBe(2);
     expect(subs.lesson()?.summary).toBe('สรุป');
+  });
+
+  it('leaves a video with Thai captions alone: nothing translated, nothing dubbed', async () => {
+    vi.mocked(fetchTranscript).mockResolvedValueOnce([
+      { id: 0, startMs: 0, endMs: 3000, text: 'สวัสดีครับ วันนี้เรามาดู AI กัน' },
+      { id: 1, startMs: 3000, endMs: 6000, text: 'เริ่มกันเลย' },
+    ]);
+    const { translateBatch } = await import('~/messaging/client');
+    vi.mocked(translateBatch).mockClear();
+    const { subs } = make();
+    await subs.attachButton();
+    await subs.toggleDub();
+    await flush();
+    expect(subs.isDubbing()).toBe(false);
+    expect(subs.isOn()).toBe(false);
+    expect(toast()?.textContent).toBe('already thai');
+    expect(translateBatch).not.toHaveBeenCalled();
   });
 });
 

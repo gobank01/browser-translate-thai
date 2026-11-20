@@ -58,3 +58,20 @@ describe('startWatchTracker', () => {
     expect(send).toHaveBeenCalledTimes(1); // ten seconds is not watching
   });
 });
+
+describe('startWatchTracker and music', () => {
+  afterEach(() => vi.useRealTimers());
+  it('keeps music videos out of the log', async () => {
+    vi.useFakeTimers();
+    const video = Object.assign(new EventTarget(), { currentTime: 0, paused: false, seeking: false }) as unknown as HTMLVideoElement & { currentTime: number };
+    const send = vi.fn();
+    const stop = startWatchTracker({
+      findVideo: () => video, mediaKey: () => 'music000000', transcript: () => [], isDubbing: () => false,
+      fetchDetails: async () => ({ details: { ...DETAILS, videoId: 'music000000', category: 'Music' } }),
+      send,
+    });
+    for (let s = 1; s <= 70; s++) { video.currentTime = s; await vi.advanceTimersByTimeAsync(1000); }
+    stop();
+    expect(send).not.toHaveBeenCalled();
+  });
+});

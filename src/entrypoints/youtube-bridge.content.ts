@@ -178,6 +178,8 @@ export default defineContentScript({
             lengthSeconds: Number(vd.lengthSeconds) || 0,
             keywords: Array.isArray(vd.keywords) ? vd.keywords.map(String).slice(0, 30) : [],
             shortDescription: String(vd.shortDescription ?? '').slice(0, 2000),
+            category: String((pr as { microformat?: { playerMicroformatRenderer?: { category?: unknown } } })
+              .microformat?.playerMicroformatRenderer?.category ?? '') || undefined,
           }
         : undefined;
 
