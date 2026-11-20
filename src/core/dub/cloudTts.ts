@@ -3,7 +3,7 @@
  * audio URL out. Keys come from the build (`.env.local`, written by setup) and
  * never leave the background.
  */
-import { CLOUD_PREFIX, OMNI_PREFIX, OMNI_VOICES } from './cloudVoice';
+import { CLOUD_PREFIX, MS_PREFIX, OMNI_PREFIX, OMNI_VOICES, OR_ELEVEN_PREFIX } from './cloudVoice';
 import { saidVerbatim } from './verbatim';
 import { bytesToBase64, pcm16ToWav } from './wav';
 
@@ -14,6 +14,8 @@ const OPENROUTER = 'https://openrouter.ai/api/v1';
 export const OMNI_MODEL = 'openai/gpt-audio-mini';
 export const FALLBACK_MODEL = 'google/gemini-3.8-flash-tts';
 export const ELEVEN_MODEL = 'eleven_v4';
+export const MS_MODEL = 'microsoft/mai-voice-2.1-flash';
+export const OR_ELEVEN_MODEL = 'elevenlabs/eleven-v4-turbo';
 
 /**
  * GPT Audio Mini is a chat model that happens to talk, so it is told it is a
@@ -88,7 +90,10 @@ const wavUrl = (pcm: Uint8Array) => `data:audio/wav;base64,${bytesToBase64(pcm16
 
 /** The model whose audio a voiceURI gets, for the cache key. */
 export function modelFor(voiceURI: string): string {
-  return voiceURI.startsWith(OMNI_PREFIX) ? OMNI_MODEL : ELEVEN_MODEL;
+  if (voiceURI.startsWith(OMNI_PREFIX)) return OMNI_MODEL;
+  if (voiceURI.startsWith(MS_PREFIX)) return MS_MODEL;
+  if (voiceURI.startsWith(OR_ELEVEN_PREFIX)) return OR_ELEVEN_MODEL;
+  return ELEVEN_MODEL;
 }
 
 export async function synthesize(voiceURI: string, text: string, keys: TtsKeys, fetchFn: Fetch = fetch): Promise<string> {
@@ -101,6 +106,20 @@ export async function synthesize(voiceURI: string, text: string, keys: TtsKeys, 
     }
     const gender = OMNI_VOICES.find((v) => v.id === id)?.gender ?? 'female';
     return wavUrl(await fallbackSpeak(text, gender, keys.openrouter, fetchFn));
+  }
+  // True text-to-speech models on OpenRouter: they read exactly what they are given.
+  const speech = voiceURI.startsWith(MS_PREFIX) ? { prefix: MS_PREFIX, model: MS_MODEL }
+    : voiceURI.startsWith(OR_ELEVEN_PREFIX) ? { prefix: OR_ELEVEN_PREFIX, model: OR_ELEVEN_MODEL }
+    : null;
+  if (speech) {
+    if (!keys.openrouter) throw new Error('no-openrouter-key');
+    const res = await fetchFn(`${OPENROUTER}/audio/speech`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${keys.openrouter}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: speech.model, input: text, voice: voiceURI.slice(speech.prefix.length), response_format: 'mp3' }),
+    });
+    if (!res.ok) throw new Error(`${speech.model}-${res.status}`);
+    return `data:audio/mpeg;base64,${bytesToBase64(new Uint8Array(await res.arrayBuffer()))}`;
   }
   if (voiceURI.startsWith(CLOUD_PREFIX)) {
     if (!keys.elevenlabs) throw new Error('no-elevenlabs-key');

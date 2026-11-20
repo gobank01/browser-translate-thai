@@ -6,6 +6,7 @@ import type { SpeechEngine } from './scheduler';
  *
  *   oa:<voice>   GPT Audio Mini through OpenRouter — the default, about 1 baht
  *                for a 10-minute video (needs WXT_OPENROUTER_KEY)
+ *   ms:<voice>   Microsoft MAI-Voice through OpenRouter — Thai voices, reads verbatim
  *   el:<id>      ElevenLabs — premium voices (needs WXT_ELEVENLABS_KEY)
  *
  * Audio is fetched ahead of the playhead (`prepare`), kept by text, and played
@@ -25,10 +26,25 @@ export interface CloudVoiceInfo {
   uri: string;
   name: string;
   gender: 'female' | 'male';
-  provider: 'GPT' | 'ElevenLabs';
+  provider: 'ElevenLabs' | 'GPT' | 'Microsoft' | 'ElevenLabs (own key)';
 }
 
 /** GPT Audio Mini voices that read Thai well, picked by ear. */
+/** voiceURI prefix of a Microsoft MAI-Voice voice. */
+export const MS_PREFIX = 'ms:';
+
+/**
+ * Microsoft MAI-Voice 2.1 Flash through OpenRouter: a true text-to-speech
+ * model with Thai voices of its own — it reads exactly what it is given, so no
+ * transcript check is needed. About 2.5 baht for a 10-minute video.
+ */
+export const MS_VOICES: readonly CloudVoiceInfo[] = (
+  [['Harper', 'female'], ['Krit', 'male'], ['Nattapong', 'male'], ['Grant', 'male']] as const
+).map(([name, gender]) => {
+  const id = `th-TH-${name}:MAI-Voice-2.1-Flash`;
+  return { id, uri: MS_PREFIX + id, name, gender, provider: 'Microsoft' as const };
+});
+
 export const OMNI_VOICES: readonly CloudVoiceInfo[] = (
   [['marin', 'Marin', 'female'], ['coral', 'Coral', 'female'], ['cedar', 'Cedar', 'male'], ['ash', 'Ash', 'male']] as const
 ).map(([id, name, gender]) => ({ id, uri: OMNI_PREFIX + id, name, gender, provider: 'GPT' as const }));
@@ -42,15 +58,35 @@ export function parseVoices(raw: string | undefined): CloudVoiceInfo[] {
   return (raw ?? '').split(',').flatMap((item) => {
     const [name, id, gender] = item.split(':').map((p) => p.trim());
     return name && id
-      ? [{ id, uri: CLOUD_PREFIX + id, name, gender: gender === 'male' ? 'male' as const : 'female' as const, provider: 'ElevenLabs' as const }]
+      ? [{ id, uri: CLOUD_PREFIX + id, name, gender: gender === 'male' ? 'male' as const : 'female' as const, provider: 'ElevenLabs (own key)' as const }]
       : [];
   });
 }
 
-/** Every cloud voice this build can reach, GPT first. */
+/** voiceURI prefix of an ElevenLabs voice reached through OpenRouter. */
+export const OR_ELEVEN_PREFIX = 'oe:';
+
+/**
+ * ElevenLabs voices through OpenRouter (eleven_v4_turbo): ElevenLabs quality
+ * on the OpenRouter key alone, about 7 baht for a 10-minute video — a fifth of
+ * buying from ElevenLabs direct. The voices setup picked, else Anna/Somchai.
+ */
+export function orElevenVoices(raw: string | undefined): CloudVoiceInfo[] {
+  const picked = parseVoices(raw);
+  const base = picked.length ? picked : parseVoices('Anna:brM9iIbwDREZaWL8luun:female,Somchai:XLXcyPK1jTjw1pYLLcM9:male');
+  return base.map((v) => ({ ...v, uri: OR_ELEVEN_PREFIX + v.id, provider: 'ElevenLabs' as const }));
+}
+
+/**
+ * Every cloud voice this build can reach, the default first: your own
+ * ElevenLabs account when setup was given its key (the best voices, eleven_v4),
+ * else ElevenLabs through OpenRouter, then GPT and Microsoft.
+ */
 export const CLOUD_VOICES: readonly CloudVoiceInfo[] = [
-  ...(import.meta.env.WXT_OPENROUTER_KEY ? OMNI_VOICES : []),
   ...(import.meta.env.WXT_ELEVENLABS_KEY ? parseVoices(import.meta.env.WXT_DUB_VOICES) : []),
+  ...(import.meta.env.WXT_OPENROUTER_KEY
+    ? [...orElevenVoices(import.meta.env.WXT_DUB_VOICES), ...OMNI_VOICES, ...MS_VOICES]
+    : []),
 ];
 
 /** Whether this build has any cloud voice. */
@@ -58,7 +94,7 @@ export const CLOUD_TTS = CLOUD_VOICES.length > 0;
 
 /** The voiceURI itself when it names a cloud voice, else null (a system voice). */
 export function cloudVoiceId(voiceURI: string): string | null {
-  return voiceURI.startsWith(CLOUD_PREFIX) || voiceURI.startsWith(OMNI_PREFIX) ? voiceURI : null;
+  return [CLOUD_PREFIX, OMNI_PREFIX, MS_PREFIX, OR_ELEVEN_PREFIX].some((p) => voiceURI.startsWith(p)) ? voiceURI : null;
 }
 
 /** The voices from the same provider as `voiceURI` — what a quick switch offers. */
@@ -76,7 +112,11 @@ export interface PreparedEngine {
   durationMs: (text: string) => number | undefined;
 }
 
-interface Clip { status: 'loading' | 'ready' | 'failed'; url?: string; durationMs?: number }
+interface Clip { status: 'loading' | 'ready' | 'failed'; url?: string; durationMs?: number; tries?: number }
+
+/** Attempts per line before it is given up on. */
+const FETCH_TRIES = 3;
+const RETRY_DELAY_MS = 800;
 
 /** Requests in flight at once: enough to stay ahead, few enough for the API's limits. */
 const MAX_IN_FLIGHT = 4;
@@ -126,7 +166,17 @@ export function createCloudVoice(deps: CloudVoiceDeps): {
           clip.durationMs = (await measure(url)) || undefined;
           clip.status = 'ready';
         })
-        .catch(() => { clip.status = 'failed'; })
+        .catch(() => {
+          // A busy or flaky service is the usual cause, and a line given up on
+          // is a line of silence: ask again, a little later, before giving up.
+          clip.tries = (clip.tries ?? 0) + 1;
+          if (clip.tries < FETCH_TRIES) {
+            clip.status = 'loading';
+            setTimeout(() => { waiting.unshift(text); pump(); }, RETRY_DELAY_MS * clip.tries);
+          } else {
+            clip.status = 'failed';
+          }
+        })
         .finally(() => { inFlight--; pump(); });
     }
   }

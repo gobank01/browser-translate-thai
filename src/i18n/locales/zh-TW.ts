@@ -261,4 +261,5 @@ export const zhTW: Record<StringKey, string> = {
   dubNativeSwitched: "Playing YouTube's own Thai audio (free, in sync) ·",
   dubNativeAlready: 'This video is already playing Thai audio ·',
   dubUseOwn: 'Use our dub instead',
+  dubPreferNative: "Use a video's own Thai audio track first (free) when it has one",
 };

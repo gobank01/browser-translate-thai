@@ -23,8 +23,8 @@ node setup.mjs
 
 | คำถาม | ใส่ไหม | ได้อะไร |
 |---|---|---|
-| **OpenRouter key** | แนะนำ | คำแปลลื่น + เสียงพากย์ไทย หญิง (Marin, Coral) / ชาย (Cedar, Ash) ราว 1–2 บาทต่อคลิป 10 นาที · สมัครที่ [openrouter.ai/keys](https://openrouter.ai/keys) |
-| **ElevenLabs key** | ไม่บังคับ | เสียงพรีเมียมเพิ่ม (แพงกว่าราว 30 เท่า) · สร้างที่ [elevenlabs.io › API keys](https://elevenlabs.io/app/settings/api-keys) เปิดสิทธิ์ Text to Speech และ Voices (read) |
+| **OpenRouter key** | แนะนำ | คำแปลลื่น + เสียงพากย์ไทย: ค่าเริ่มต้น ElevenLabs (หญิง Anna / ชาย Somchai) ราว 7 บาท · หรือ Microsoft (Harper / Krit, Nattapong, Grant) ราว 2.5 บาท · หรือ GPT (Marin, Coral / Cedar, Ash) ราว 1–2 บาท ต่อคลิป 10 นาที · สมัครที่ [openrouter.ai/keys](https://openrouter.ai/keys) |
+| **ElevenLabs key** | ไม่ต้องก็ได้ | ใช้เสียง ElevenLabs จากบัญชีตัวเองโดยตรง (แพงกว่าผ่าน OpenRouter ราว 5 เท่า) · สร้างที่ [elevenlabs.io › API keys](https://elevenlabs.io/app/settings/api-keys) |
 | **บันทึกคลิปที่ดู** | ไม่บังคับ | จดคลิปที่ดูพร้อมบทพูดไทยเป็นโน้ตในเครื่อง |
 
 ไม่ใส่ key เลยก็ใช้ได้: แปลด้วย Google ฟรี + เสียงไทย Kanya ของ Mac ฟรี
@@ -56,7 +56,7 @@ node setup.mjs
 | เปิด/ปิดพากย์คลิปนี้ | ปุ่ม **🔈TH** บนแถบวิดีโอ หรือ **Option+D** |
 | เปิด/ปิดพากย์อัตโนมัติทุกคลิป | คลิกไอคอนส่วนขยาย › สวิตช์ "พากย์ไทยอัตโนมัติ" |
 | เลือกเสียงให้ช่องนี้ | คลิกขวาที่ปุ่ม TH › เลือกเสียง (ระบบจำให้ช่องนั้น) |
-| เปลี่ยนเสียงเริ่มต้น | คลิกไอคอนส่วนขยาย › เลือกเสียง |
+| เปลี่ยนเสียงเริ่มต้น | คลิกไอคอนส่วนขยาย › เลือกบริการเสียง (ElevenLabs / GPT / Microsoft) › เลือกเสียง |
 | เพิ่ม/ลดเสียงพากย์ เสียงคลิป | คลิกไอคอนส่วนขยาย (ปุ่ม − +) หรือ คลิกขวาที่ปุ่ม TH |
 | ตั้งค่าละเอียด | คลิกไอคอนส่วนขยาย › ⚙️ › ซับไตเติล › การ์ด "พากย์ไทย" |
 
@@ -67,8 +67,10 @@ node setup.mjs
 | แบบ | ราคาโดยประมาณ ต่อคลิป 10 นาที |
 |---|---|
 | ไม่ใส่ key (Google แปล + เสียง Mac) | ฟรี |
-| OpenRouter (แปล + เสียง GPT Audio Mini) | 1–2 บาท |
-| ElevenLabs | ราว 35 บาท |
+| OpenRouter + เสียง ElevenLabs (ค่าเริ่มต้น) | ราว 7 บาท |
+| OpenRouter + เสียง GPT Audio Mini | 1–2 บาท |
+| OpenRouter (แปล + เสียง Microsoft MAI-Voice) | ราว 2.5 บาท |
+| ElevenLabs key ตรง | ราว 35 บาท |
 | คลิปที่มีเสียงไทยของ YouTube | ฟรี |
 
 ## อัปเดตเป็นเวอร์ชันใหม่ / เปลี่ยน key

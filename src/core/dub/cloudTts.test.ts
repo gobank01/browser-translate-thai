@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { synthesize, OMNI_MODEL, FALLBACK_MODEL } from './cloudTts';
+import { synthesize, modelFor, OMNI_MODEL, FALLBACK_MODEL, MS_MODEL } from './cloudTts';
 
 const b64 = (bytes: number[]) => btoa(String.fromCharCode(...bytes));
 
@@ -52,5 +52,19 @@ describe('synthesize with GPT Audio Mini', () => {
 
   it('needs the key', async () => {
     await expect(synthesize('oa:marin', 'x', {})).rejects.toThrow('no-openrouter-key');
+  });
+});
+
+describe('synthesize with Microsoft MAI-Voice', () => {
+  it('reads the line through /audio/speech with the Thai voice, once', async () => {
+    const f = vi.fn(async (url: string, init?: RequestInit) => {
+      expect(String(url).endsWith('/audio/speech')).toBe(true);
+      expect(JSON.parse(String(init?.body))).toMatchObject({ model: MS_MODEL, voice: 'th-TH-Krit:MAI-Voice-2.1-Flash', input: 'สวัสดี' });
+      return new Response(new Uint8Array([7, 7, 7]));
+    });
+    const url = await synthesize('ms:th-TH-Krit:MAI-Voice-2.1-Flash', 'สวัสดี', { openrouter: 'k' }, f as unknown as typeof fetch);
+    expect(url).toBe(`data:audio/mpeg;base64,${btoa(String.fromCharCode(7, 7, 7))}`);
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(modelFor('ms:x')).toBe(MS_MODEL);
   });
 });

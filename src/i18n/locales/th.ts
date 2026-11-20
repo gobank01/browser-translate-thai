@@ -245,4 +245,5 @@ export const th: Record<StringKey, string> = {
   dubNativeSwitched: 'ใช้เสียงพากย์ไทยของ YouTube (ฟรี ตรงจังหวะ) ·',
   dubNativeAlready: 'คลิปนี้มีเสียงไทยของ YouTube อยู่แล้ว ·',
   dubUseOwn: 'ใช้เสียงพากย์ของเราแทน',
+  dubPreferNative: 'ใช้เสียงไทยที่ YouTube มีให้ก่อน (ฟรี) ถ้าคลิปนั้นมี',
 };

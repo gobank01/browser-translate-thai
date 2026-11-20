@@ -102,6 +102,8 @@ export interface VideoSubTranslator {
 
 /** Longest the video is held waiting for the dub before it plays regardless. */
 const HOLD_MAX_MS = 20_000;
+/** Longest a playing video is paused for one late line before it carries on. */
+const GAP_HOLD_MAX_MS = 6000;
 /** How long "ready" stays on screen. */
 const READY_NOTE_MS = 1500;
 
@@ -132,6 +134,10 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
   let lastStatusAt = 0;
   /** When the "ready" note went up, so it can come down again. */
   let readySince = 0;
+  /** The line a mid-video wait was last made for, so it is waited for once. */
+  let heldForLine = -1;
+  /** The current wait is for one late line, not the start of the dub. */
+  let gapHold = false;
   let dubVolumeAt = -1;
 
   function currentTimeMs(): number {
@@ -365,7 +371,7 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     setDubStatus(site.selectors, { text: withHold(s.statusLoading) });
     // A video with its own Thai track (YouTube's dubs) plays that instead:
     // perfectly in time and free. The viewer can still ask for ours.
-    if (!opts.own && site.nativeAudio) {
+    if (!opts.own && site.nativeAudio && dub.getSettings().preferNative) {
       const lang = deps.getTargetLang().toLowerCase().split('-')[0]!;
       const native = await site.nativeAudio(lang).catch(() => 'none' as const);
       if (!dubbing) return;
@@ -439,15 +445,16 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     });
   }
 
-  function hold(): void {
+  function hold(maxMs = HOLD_MAX_MS): void {
     const video = site.findVideo();
     if (!video || video.paused) return;
     holding = true;
-    holdUntil = Date.now() + HOLD_MAX_MS;
+    holdUntil = Date.now() + maxMs;
     video.pause();
   }
 
   function release(): void {
+    gapHold = false;
     if (!holding) return;
     holding = false;
     try {
@@ -470,6 +477,19 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
       return;
     }
     const r = dubScheduler.readiness();
+    // Mid-video, the next line about to start without its voice would be a
+    // stretch of silence: wait for it briefly instead — once per line.
+    const video = site.findVideo();
+    const nextAt = Math.round((video?.currentTime ?? 0) * 1000 + r.nextInMs);
+    if (!holding && video && !video.paused && !r.nextReady && r.nextInMs < 600 && heldForLine !== nextAt) {
+      heldForLine = nextAt;
+      gapHold = true;
+      hold(GAP_HOLD_MAX_MS);
+    }
+    if (gapHold && holding && (r.nextReady || now > holdUntil)) {
+      gapHold = false;
+      release();
+    }
     if (r.ready || (holding && now > holdUntil)) {
       release();
       if (!readySince) {

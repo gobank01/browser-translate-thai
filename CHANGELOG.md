@@ -2,6 +2,46 @@
 
 All notable changes will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.2] — 2026-11-19
+
+### Changed
+- **Your own ElevenLabs account first.** A build set up with an ElevenLabs key
+  dubs with eleven_v4 from that account (the best Thai voices) by default.
+- **ElevenLabs voices through OpenRouter, as the default.** The same voices as
+  ElevenLabs direct (Anna, Somchai) on the OpenRouter key alone, with
+  eleven_v4_turbo: about 7 baht per 10-minute video instead of about 35. GPT
+  Audio Mini stays as a cheaper option, but no longer the default — its Thai
+  accent drifted.
+- **Smoother speech.** Short adjacent captions are joined into longer sentences,
+  the previous line gets more time to finish before it is cut, and the speed
+  eases down between lines instead of lurching from fast to slow.
+- **Loanwords stay loanwords.** Technical terms and words Thai speakers
+  normally borrow are kept in their usual Thai transliteration (ทับศัพท์)
+  instead of forced Thai equivalents.
+
+### Fixed
+- **A one-minute buffer.** Translation and voices are prepared 60 s ahead of the
+  playhead (was 30 s), so a slow line has time to arrive; still only what is
+  actually watched (plus that minute) is paid for.
+- **Silent stretches.** A line whose audio failed is asked for again (three
+  tries) instead of being skipped; a line whose audio arrives a moment late is
+  still said in the gap after it; and when the next line is about to start
+  without its voice, the video pauses briefly (up to 6 s) instead of playing on
+  in silence.
+- A setting to stop using a video's own Thai audio track, for anyone who
+  prefers our voices.
+
+## [0.3.1] — 2026-11-19
+
+### Added
+- **Thai voices from Microsoft MAI-Voice 2.1** (through the same OpenRouter
+  key): female Harper, male Krit, Nattapong and Grant. A true text-to-speech
+  model, so it reads every line exactly as written — no transcript check or
+  retry needed — in about 1–3 s a line, roughly 2.5 baht per 10-minute video.
+  Voices per channel work with it as with GPT.
+- The popup can switch which service speaks (GPT, Microsoft, ElevenLabs)
+  before picking the voice.
+
 ## [0.3.0] — 2026-11-12 · Thai dub
 
 The first numbered release of the Thai-dub fork (gobank01/browser-translate-thai).

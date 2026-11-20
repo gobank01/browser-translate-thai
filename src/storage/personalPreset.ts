@@ -33,7 +33,7 @@ export const PERSONAL_BUILD = Boolean(ENV.WXT_THAI_DUB || ENV.WXT_OPENROUTER_KEY
  * Bumped when the preset's one-time defaults change, so a store that already
  * took an older preset gets the new defaults once — and can change them after.
  */
-const PRESET_VERSION = 5;
+const PRESET_VERSION = 7;
 
 export function applyPersonalPreset(data: AppData, env: PresetEnv = ENV): AppData {
   const key = env.WXT_OPENROUTER_KEY;

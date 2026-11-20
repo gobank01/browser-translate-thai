@@ -20,13 +20,17 @@ export interface DubLine {
 }
 
 /** Adjacent cues closer than this are one sentence broken across the screen. */
-const MERGE_GAP_MS = 300;
+const MERGE_GAP_MS = 700;
 /** …unless merging would make one line longer than this. */
-const MERGE_MAX_SPAN_MS = 6000;
+const MERGE_MAX_SPAN_MS = 10_000;
 const SENTENCE_END = /[.!?…。！？]["')\]]*$/;
 
 /** How long the previous line may run into the next before it is cut. */
-export const GRACE_MS = 600;
+export const GRACE_MS = 1000;
+/** How much slower one line may be than the line before it. */
+const RATE_EASE = 0.1;
+/** How long after its end a late line may still be said. */
+export const LATE_MS = 1500;
 /** The most auto-rate will speed a line up. */
 export const MAX_AUTO_RATE = 1.5;
 /**
@@ -90,7 +94,7 @@ function firstLineFrom(timeMs: number, lines: readonly DubLine[]): number {
 }
 
 /** How far ahead of the playhead cloud audio is fetched. */
-export const PREPARE_AHEAD_MS = 30_000;
+export const PREPARE_AHEAD_MS = 60_000;
 
 /** The index of the line containing `timeMs`, or -1 in a gap. Lines are sorted. */
 export function lineAt(timeMs: number, lines: readonly DubLine[]): number {
@@ -140,6 +144,10 @@ export interface DubReadiness {
   /** Translated and with audio to hand (always = translated for a system voice). */
   voiced: number;
   ready: boolean;
+  /** The next line to start has its text and audio. */
+  nextReady: boolean;
+  /** How soon that line starts, in video ms. */
+  nextInMs: number;
 }
 
 /** How many upcoming lines must be ready before the dub counts as ready. */
@@ -152,6 +160,8 @@ export function createDubScheduler(deps: DubSchedulerDeps): DubScheduler {
   let spoken = -1;
   /** Whether the speech in progress is ours. */
   let talking = false;
+  /** The last line's rate before playback speed, for easing. */
+  let lastRate = 0;
 
   function silence(): void {
     if (talking || synth.speaking) synth.cancel();
@@ -175,7 +185,13 @@ export function createDubScheduler(deps: DubSchedulerDeps): DubScheduler {
       if (talking) interrupt();
       return;
     }
-    const idx = lineAt(now, lines);
+    let idx = lineAt(now, lines);
+    // In the gap after a line whose audio came a moment late, say it anyway —
+    // better a beat late than not at all.
+    if (idx < 0) {
+      const before = firstLineFrom(now, lines) - 1;
+      if (before > spoken && before >= 0 && now - lines[before]!.endMs < LATE_MS) idx = before;
+    }
     if (idx < 0 || idx === spoken) return;
     const line = lines[idx]!;
     const text = deps.getText(line);
@@ -195,8 +211,15 @@ export function createDubScheduler(deps: DubSchedulerDeps): DubScheduler {
     const settings = deps.getSettings();
     const playback = video.playbackRate || 1;
     // Time is measured in video time, so a faster video leaves less real time.
-    const available = (line.endMs - now) / playback;
-    const rate = fitRate(text, available, settings.rate, settings.autoRate, deps.engine?.durationMs(text)) * playback;
+    // A late line gets the gap up to the next one.
+    const until = now >= line.endMs ? (lines[idx + 1]?.startMs ?? now + 2000) : line.endMs;
+    const available = (until - now) / playback;
+    // Speed may rise at once to keep up, but eases back down: a voice that
+    // lurches between fast and slow from one line to the next sounds broken.
+    const fitted = fitRate(text, available, settings.rate, settings.autoRate, deps.engine?.durationMs(text));
+    const eased = Math.max(fitted, lastRate - RATE_EASE);
+    lastRate = Math.min(eased, Math.max(settings.rate, MAX_AUTO_RATE));
+    const rate = lastRate * playback;
     const u = make(text);
     u.lang = deps.lang;
     const voice = deps.getVoice();
@@ -232,7 +255,14 @@ export function createDubScheduler(deps: DubSchedulerDeps): DubScheduler {
       translated++;
       if (!text || !deps.engine || deps.engine.ready(text)) voiced++;
     }
-    return { total: next.length, translated, voiced, ready: voiced === next.length };
+    // The very next line to start: is it ready, and how soon does it start?
+    const upcoming = lines.find((l) => l.startMs >= now);
+    const upText = upcoming ? deps.getText(upcoming) : '';
+    const nextReady = !upcoming || upText === '' || (upText !== null && (!deps.engine || deps.engine.ready(upText)));
+    return {
+      total: next.length, translated, voiced, ready: voiced === next.length,
+      nextReady, nextInMs: upcoming ? upcoming.startMs - now : Infinity,
+    };
   }
 
   function stop(): void {

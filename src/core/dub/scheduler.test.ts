@@ -19,7 +19,7 @@ describe('mergeCues', () => {
 
   it('keeps cues apart across a gap or when the line would grow too long', () => {
     expect(mergeCues([cue(0, 0, 1000, 'a'), cue(1, 2000, 3000, 'b')])).toHaveLength(2);
-    expect(mergeCues([cue(0, 0, 4000, 'a'), cue(1, 4100, 8000, 'b')])).toHaveLength(2);
+    expect(mergeCues([cue(0, 0, 6000, 'a'), cue(1, 6100, 12_000, 'b')])).toHaveLength(2);
   });
 });
 
@@ -214,5 +214,56 @@ describe('createDubScheduler with a cloud voice', () => {
     ready.add('หนึ่ง');
     scheduler.tick();
     expect(spoken[0]!.rate).toBe(MAX_AUTO_RATE); // 3 s of audio into 2 s, capped
+  });
+});
+
+describe('pacing', () => {
+  it('eases the rate back down instead of lurching from fast to slow', () => {
+    const spoken: Array<{ text: string; rate: number }> = [];
+    const synth = { speaking: false, speak: vi.fn((u: { text: string; rate: number }) => spoken.push(u)), cancel: vi.fn() };
+    const video = fakeVideo();
+    const long = 'ก'.repeat(60); // needs > 1.5x in 2 s
+    const scheduler = createDubScheduler({
+      synth: synth as unknown as SpeechSynthesis,
+      video,
+      lines: [{ ids: [0], startMs: 0, endMs: 2000 }, { ids: [1], startMs: 3000, endMs: 13_000 }],
+      getText: (l) => (l.ids[0] === 0 ? long : 'สั้น'),
+      getSettings: () => DEFAULT_DUB_SETTINGS,
+      getVoice: () => null,
+      lang: 'th-TH',
+      createUtterance: (text) => ({ text, rate: 1 }) as unknown as SpeechSynthesisUtterance,
+    });
+    video.currentTime = 0; scheduler.tick();
+    video.currentTime = 3.5; scheduler.tick();
+    expect(spoken[0]!.rate).toBe(MAX_AUTO_RATE);
+    expect(spoken[1]!.rate).toBeCloseTo(MAX_AUTO_RATE - 0.1); // not straight back to 1
+  });
+});
+
+
+describe('late lines', () => {
+  it('says a line whose audio came just after it ended, in the gap before the next', () => {
+    const ready = new Set<string>();
+    const spoken: string[] = [];
+    const synth = { speaking: false, speak: vi.fn((u: { text: string }) => spoken.push(u.text)), cancel: vi.fn() };
+    const video = fakeVideo();
+    const scheduler = createDubScheduler({
+      synth: synth as unknown as SpeechSynthesis,
+      video,
+      lines: [{ ids: [0], startMs: 0, endMs: 2000 }, { ids: [1], startMs: 6000, endMs: 8000 }],
+      getText: (l) => (l.ids[0] === 0 ? 'หนึ่ง' : 'สอง'),
+      getSettings: () => DEFAULT_DUB_SETTINGS,
+      getVoice: () => null,
+      lang: 'th-TH',
+      engine: { prepare: vi.fn(), ready: (t: string) => ready.has(t), durationMs: () => undefined },
+      createUtterance: (text) => ({ text, rate: 1 }) as unknown as SpeechSynthesisUtterance,
+    });
+    video.currentTime = 1; scheduler.tick();
+    expect(spoken).toEqual([]);
+    ready.add('หนึ่ง');
+    video.currentTime = 2.5; scheduler.tick(); // 0.5 s late: still said
+    expect(spoken).toEqual(['หนึ่ง']);
+    video.currentTime = 5; scheduler.tick(); // nothing more to say in the gap
+    expect(spoken).toEqual(['หนึ่ง']);
   });
 });

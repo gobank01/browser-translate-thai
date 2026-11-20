@@ -10,7 +10,9 @@ export const SPOKEN_STYLE =
   'Translate into natural, conversational spoken language, the way a native narrator would say it out loud — not written or formal subtitle style. ' +
   'Keep it concise: say the same meaning in as few words as reads naturally, so it fits the time the line is on screen. ' +
   'No parentheses, brackets, ellipses, emoji or symbols that cannot be spoken. ' +
-  'Keep names and technical terms in English only where native speakers say them in English. ' +
+  'Do not force native equivalents onto loanwords: technical terms, product names and words native speakers ' +
+  'normally borrow (AI, agent, prompt, model, app, update…) stay as they are commonly said — in Thai, written ' +
+  'as the usual Thai transliteration (ทับศัพท์, e.g. เอเจนต์, พรอมต์, โมเดล, แอป), with brand names kept in English. ' +
   'No polite sentence-final particles (such as ครับ/ค่ะ in Thai) unless the speaker is clearly being polite.';
 
 /** Internal ID-based batch protocol, not editable with the user's base prompt. */

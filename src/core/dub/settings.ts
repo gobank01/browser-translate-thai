@@ -18,6 +18,8 @@ export interface DubSettings {
   autoRate: boolean;
   /** Start dubbing by itself when a foreign-language video with captions opens. */
   autoStart: boolean;
+  /** Play a video's own Thai audio track (YouTube/creator dubs) instead of dubbing it. */
+  preferNative: boolean;
 }
 
 export const MIN_DUB_RATE = 0.8;
@@ -31,6 +33,7 @@ export const DEFAULT_DUB_SETTINGS: DubSettings = {
   duckVolume: 10,
   autoRate: true,
   autoStart: false,
+  preferNative: true,
 };
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -52,6 +55,7 @@ export function normalizeDubSettings(value: unknown): DubSettings {
     duckVolume: num(raw.duckVolume, 0, 100, d.duckVolume),
     autoRate: typeof raw.autoRate === 'boolean' ? raw.autoRate : d.autoRate,
     autoStart: typeof raw.autoStart === 'boolean' ? raw.autoStart : d.autoStart,
+    preferNative: typeof raw.preferNative === 'boolean' ? raw.preferNative : d.preferNative,
   };
   const same = (Object.keys(next) as (keyof DubSettings)[]).every((k) => raw[k] === next[k])
     && Object.keys(raw).length === Object.keys(next).length;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createCloudVoice, cloudVoiceId, parseVoices, CLOUD_PREFIX } from './cloudVoice';
+import { createCloudVoice, cloudVoiceId, orElevenVoices, parseVoices, CLOUD_PREFIX } from './cloudVoice';
 
 function fakeAudio() {
   const a = Object.assign(new EventTarget(), {
@@ -25,10 +25,20 @@ describe('cloudVoiceId', () => {
 describe('parseVoices', () => {
   it('reads the voices setup wrote, skipping junk', () => {
     expect(parseVoices('Anna:a1:female, Somchai:s2:male,bad')).toEqual([
-      { name: 'Anna', id: 'a1', uri: 'el:a1', gender: 'female', provider: 'ElevenLabs' },
-      { name: 'Somchai', id: 's2', uri: 'el:s2', gender: 'male', provider: 'ElevenLabs' },
+      { name: 'Anna', id: 'a1', uri: 'el:a1', gender: 'female', provider: 'ElevenLabs (own key)' },
+      { name: 'Somchai', id: 's2', uri: 'el:s2', gender: 'male', provider: 'ElevenLabs (own key)' },
     ]);
     expect(parseVoices(undefined)).toEqual([]);
+  });
+});
+
+describe('orElevenVoices', () => {
+  it('offers Anna and Somchai through OpenRouter unless setup picked others', () => {
+    expect(orElevenVoices(undefined).map((v) => [v.uri, v.gender, v.provider])).toEqual([
+      ['oe:brM9iIbwDREZaWL8luun', 'female', 'ElevenLabs'],
+      ['oe:XLXcyPK1jTjw1pYLLcM9', 'male', 'ElevenLabs'],
+    ]);
+    expect(orElevenVoices('Mai:m1:female')[0]!.uri).toBe('oe:m1');
   });
 });
 
@@ -76,13 +86,15 @@ describe('createCloudVoice', () => {
     expect(synth.speaking).toBe(false);
   });
 
-  it('treats a failed fetch as ready-to-skip, and cancel stops playback', async () => {
+  it('asks again after a failure, then treats the line as ready-to-skip; cancel stops playback', async () => {
+    vi.useFakeTimers();
     const audio = fakeAudio();
-    const { synth, engine } = createCloudVoice({
-      fetchAudio: async () => { throw new Error('402'); }, createAudio: () => audio as never,
-    });
+    const fetchAudio = vi.fn(async () => { throw new Error('429'); });
+    const { synth, engine } = createCloudVoice({ fetchAudio, createAudio: () => audio as never });
     engine.prepare('x');
-    await tick();
+    await vi.advanceTimersByTimeAsync(5000);
+    vi.useRealTimers();
+    expect(fetchAudio).toHaveBeenCalledTimes(3);
     expect(engine.ready('x')).toBe(true);
     const u = utterance('x');
     const onend = vi.fn();

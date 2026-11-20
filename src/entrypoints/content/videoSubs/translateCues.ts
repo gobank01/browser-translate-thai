@@ -14,7 +14,7 @@ const BULK_CHARS = 1200;
 // difference between paying for the whole track up front and paying for what is
 // actually watched, and it is why the first subtitle appears in a second or two
 // instead of after the entire transcript has been processed.
-const LOOK_AHEAD_MS = 30_000;
+const LOOK_AHEAD_MS = 60_000;
 const LOOK_BEHIND_MS = 5_000; // covers a short scrub backwards
 const MAX_RATE = 4; // faster playback consumes the buffer faster, so widen it
 
