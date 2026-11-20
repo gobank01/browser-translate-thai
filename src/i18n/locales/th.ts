@@ -247,6 +247,7 @@ export const th: Record<StringKey, string> = {
   dubUseOwn: 'ใช้เสียงพากย์ของเราแทน',
   dubAlreadyThai: 'คลิปนี้เป็นภาษาไทยอยู่แล้ว ไม่ต้องแปลหรือพากย์',
   dubPreferNative: 'ใช้เสียงไทยที่ YouTube มีให้ก่อน (ฟรี) ถ้าคลิปนั้นมี',
+  dubVoicePerSpeaker: 'สลับเสียงชาย/หญิงตามคนพูด (สำหรับคลิปสัมภาษณ์ ยังทดลอง)',
   dubLessonMenu: 'สรุปสิ่งที่ดูไปแล้ว (Option+S)',
   dubLessonTitle: 'สรุปบทเรียน',
   dubLessonLoading: 'กำลังสรุปส่วนที่ดูไปแล้ว…',

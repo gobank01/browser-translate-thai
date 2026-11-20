@@ -2,6 +2,15 @@
 
 All notable changes will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.6] — 2026-11-20
+
+### Changed
+- **One voice again by default.** Switching voices with the speaker flipped
+  between male and female on guesses, which was confusing, so it is now a
+  setting (Settings › Subtitles › Thai dub, "switch voice with the speaker"),
+  off unless chosen. When on, voices switch only after a man and a woman have
+  each clearly spoken several lines; until then the channel's voice is kept.
+
 ## [0.3.5] — 2026-11-20
 
 ### Added

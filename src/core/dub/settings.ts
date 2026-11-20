@@ -20,6 +20,8 @@ export interface DubSettings {
   autoStart: boolean;
   /** Play a video's own Thai audio track (YouTube/creator dubs) instead of dubbing it. */
   preferNative: boolean;
+  /** Interviews: switch between a male and a female voice with the speaker. Off unless chosen. */
+  voicePerSpeaker: boolean;
 }
 
 export const MIN_DUB_RATE = 0.8;
@@ -34,6 +36,7 @@ export const DEFAULT_DUB_SETTINGS: DubSettings = {
   autoRate: true,
   autoStart: false,
   preferNative: true,
+  voicePerSpeaker: false,
 };
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -56,6 +59,7 @@ export function normalizeDubSettings(value: unknown): DubSettings {
     autoRate: typeof raw.autoRate === 'boolean' ? raw.autoRate : d.autoRate,
     autoStart: typeof raw.autoStart === 'boolean' ? raw.autoStart : d.autoStart,
     preferNative: typeof raw.preferNative === 'boolean' ? raw.preferNative : d.preferNative,
+    voicePerSpeaker: typeof raw.voicePerSpeaker === 'boolean' ? raw.voicePerSpeaker : d.voicePerSpeaker,
   };
   const same = (Object.keys(next) as (keyof DubSettings)[]).every((k) => raw[k] === next[k])
     && Object.keys(raw).length === Object.keys(next).length;

@@ -127,6 +127,8 @@ const VOICE_SEP = '\u0001';
 const SPEAKER_AHEAD_MS = 60_000;
 const SPEAKER_BATCH = 40;
 const SPEAKER_MAX_ERRORS = 3;
+/** Lines each of a man and a woman must have before voices are switched at all. */
+const SPEAKER_MIN_LINES = 3;
 /** A line this close to starting goes ahead in the default voice rather than wait for its speaker. */
 const SPEAKER_WAIT_MS = 4000;
 /** Longest a playing video is paused for one late line before it carries on. */
@@ -593,7 +595,7 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
   /** Label the lines due in the next minute that have no speaker yet. */
   function pumpSpeakers(nowMs: number): void {
     const label = deps.dub?.labelSpeakers;
-    if (!label || speakerBusy || speakerErrors >= SPEAKER_MAX_ERRORS) return;
+    if (!label || !deps.dub?.getSettings().voicePerSpeaker || speakerBusy || speakerErrors >= SPEAKER_MAX_ERRORS) return;
     const due = cues.filter((c) => c.endMs >= nowMs - 2000 && c.startMs <= nowMs + SPEAKER_AHEAD_MS
       && !speakerOf.has(c.id) && !speakerAsked.has(c.id)).slice(0, SPEAKER_BATCH);
     if (!due.length) return;
@@ -621,12 +623,22 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
    * being worked out and the line is not yet due.
    */
   function voiceForLine(line: DubLine, nowMs: number): string | null {
-    if (!deps.dub?.labelSpeakers || speakerErrors >= SPEAKER_MAX_ERRORS) return activeVoiceURI;
+    if (!deps.dub?.labelSpeakers || !deps.dub.getSettings().voicePerSpeaker || speakerErrors >= SPEAKER_MAX_ERRORS) {
+      return activeVoiceURI;
+    }
     const speaker = line.ids.map((id) => speakerOf.get(id)).find(Boolean);
     if (!speaker) return line.startMs - nowMs > SPEAKER_WAIT_MS ? null : activeVoiceURI;
-    const known = Object.values(speakerGenders).filter((g) => g !== 'unknown');
+    // Only switch once a man and a woman have each clearly spoken several
+    // lines; anything less certain keeps the one voice, since a voice that
+    // flips on a guess is worse than no switching at all.
+    const linesBy = { male: 0, female: 0 };
+    for (const sp of speakerOf.values()) {
+      const g = speakerGenders[sp];
+      if (g === 'male' || g === 'female') linesBy[g]++;
+    }
     const gender = speakerGenders[speaker];
-    if (new Set(known).size < 2 || !gender || gender === 'unknown') return activeVoiceURI;
+    if (linesBy.male < SPEAKER_MIN_LINES || linesBy.female < SPEAKER_MIN_LINES
+      || !gender || gender === 'unknown') return activeVoiceURI;
     return voiceOfGender(gender, activeVoiceURI) ?? activeVoiceURI;
   }
 

@@ -263,6 +263,7 @@ export const ko: Record<StringKey, string> = {
   dubUseOwn: 'Use our dub instead',
   dubAlreadyThai: 'This video is already in Thai — nothing to translate or dub',
   dubPreferNative: "Use a video's own Thai audio track first (free) when it has one",
+  dubVoicePerSpeaker: 'Switch male/female voice with the speaker (interviews, experimental)',
   dubLessonMenu: "Summarize what I've watched (Option+S)",
   dubLessonTitle: 'Lesson so far',
   dubLessonLoading: 'Summarizing what you have watched…',
