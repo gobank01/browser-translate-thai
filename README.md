@@ -72,7 +72,7 @@ node setup.mjs
 | OpenRouter + เสียง ElevenLabs (ค่าเริ่มต้น) | ราว 7 บาท |
 | OpenRouter + เสียง GPT Audio Mini | 1–2 บาท |
 | OpenRouter (แปล + เสียง Microsoft MAI-Voice) | ราว 2.5 บาท |
-| ElevenLabs key ตรง | ราว 35 บาท |
+| ElevenLabs key ตรง (v4 turbo) | ราว 15–20 บาท หรือใช้เครดิตแพ็กเกจ |
 | คลิปที่มีเสียงไทยของ YouTube | ฟรี |
 
 ## อัปเดตเป็นเวอร์ชันใหม่ / เปลี่ยน key

@@ -2,6 +2,14 @@
 
 All notable changes will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.4] — 2026-11-20
+
+### Changed
+- **Your own ElevenLabs account now speaks with eleven_v4_turbo** (was
+  eleven_v4): the same voices for half the credits — about half an hour of
+  dubbing a day fits the Creator plan. Clips already made with v4 stay cached;
+  new lines use turbo.
+
 ## [0.3.3] — 2026-11-20
 
 ### Added

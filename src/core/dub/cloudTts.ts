@@ -13,7 +13,7 @@ type Fetch = typeof fetch;
 const OPENROUTER = 'https://openrouter.ai/api/v1';
 export const OMNI_MODEL = 'openai/gpt-audio-mini';
 export const FALLBACK_MODEL = 'google/gemini-3.8-flash-tts';
-export const ELEVEN_MODEL = 'eleven_v4';
+export const ELEVEN_MODEL = 'eleven_v4_turbo';
 export const MS_MODEL = 'microsoft/mai-voice-2.1-flash';
 export const OR_ELEVEN_MODEL = 'elevenlabs/eleven-v4-turbo';
 

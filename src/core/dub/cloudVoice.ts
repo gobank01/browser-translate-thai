@@ -79,7 +79,7 @@ export function orElevenVoices(raw: string | undefined): CloudVoiceInfo[] {
 
 /**
  * Every cloud voice this build can reach, the default first: your own
- * ElevenLabs account when setup was given its key (the best voices, eleven_v4),
+ * ElevenLabs account when setup was given its key (eleven_v4_turbo: half the credits of v4),
  * else ElevenLabs through OpenRouter, then GPT and Microsoft.
  */
 export const CLOUD_VOICES: readonly CloudVoiceInfo[] = [
