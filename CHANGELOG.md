@@ -2,6 +2,16 @@
 
 All notable changes will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.7] — 2026-11-20
+
+### Fixed
+- **The watch log works.** Its helper is installed outside ~/Documents, where
+  macOS would not let Chrome run it, and keeps notes in a staging folder when
+  the notes folder cannot be written. Re-run `watchlog/install.sh` once.
+- **Music videos are recognised** from the title and channel too ("Official
+  MV", "Lyric Video", "- Topic", VEVO…), not only YouTube's Music category,
+  which the player often does not report.
+
 ## [0.3.6] — 2026-11-20
 
 ### Changed

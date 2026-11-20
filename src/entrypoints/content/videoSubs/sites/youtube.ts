@@ -3,6 +3,7 @@ import { fetchTranscript, pickTrack } from '../fetchTranscript';
 import { fetchTranscriptText } from '../transcriptBridge';
 import { switchToNativeAudio } from '../nativeAudio';
 import { thaiShare } from '~/core/dub/thai';
+import { isMusicVideo } from '~/core/watchlog/music';
 import type { CaptionsResponse } from '../bridgeProtocol';
 import type { SiteMatcher, SiteProbe, SubtitleSite } from '../site';
 import type { Cue } from '~/core/subtitles/types';
@@ -74,7 +75,7 @@ export function createYouTubeSite(): SubtitleSite {
       const thaiTitle = thaiShare(found.details?.title ?? '') > 0.3 ? 'th' : undefined;
       return {
         kind: 'ready', languageCode: track.languageCode, spokenLanguage: asr?.languageCode ?? thaiTitle,
-        music: found.details?.category === 'Music',
+        music: found.details ? isMusicVideo(found.details) : false,
       };
     },
 

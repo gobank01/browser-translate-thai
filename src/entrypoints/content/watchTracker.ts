@@ -1,3 +1,4 @@
+import { isMusicVideo } from '~/core/watchlog/music';
 import { buildRecord, MIN_WATCH_S, WatchClock, type TranscriptLine, type WatchRecord } from '~/core/watchlog/watchLog';
 import type { VideoDetails } from './videoSubs/bridgeProtocol';
 
@@ -39,7 +40,7 @@ export function startWatchTracker(deps: WatchTrackerDeps): () => void {
   function flush(): void {
     if (!key || !meta?.details || meta.details.videoId !== key || clock.watchedS < MIN_WATCH_S) return;
     // Music is listened to, not studied: it stays out of the learning log.
-    if (meta.details.category === 'Music') return;
+    if (isMusicVideo(meta.details)) return;
     deps.send(buildRecord({ details: meta.details, clock, dubbed, language: meta.language, transcript: lines, session, lesson: deps.lesson?.() }));
     lastFlush = Date.now();
   }
