@@ -133,7 +133,23 @@ def write(path, text):
     os.replace(tmp, path)
 
 
+STAGING = os.path.expanduser('~/Library/Application Support/BrowserTranslate/watched')
+
+
 def save(rec):
+    """Write into the notes folder; if macOS will not let Chrome's helper into
+    it (Documents is protected), keep the note in STAGING so nothing is lost."""
+    global OUT
+    try:
+        _save(rec)
+    except PermissionError as e:
+        log(f'no access to {OUT} ({e}); keeping notes in {STAGING} — allow Chrome to use the Documents folder '
+            '(System Settings › Privacy & Security › Files and Folders) to write there')
+        OUT = STAGING
+        _save(rec)
+
+
+def _save(rec):
     if not re.fullmatch(r'[\w-]{6,20}', rec.get("videoId", "")):
         raise ValueError('bad videoId')
     os.makedirs(OUT, exist_ok=True)

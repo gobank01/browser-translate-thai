@@ -14,14 +14,19 @@ NOTES="${1:-$HOME/Documents/BrowserTranslate-watched}"
 ID="${2:-$(/usr/bin/python3 -c 'import hashlib,sys;h=hashlib.sha256(sys.argv[1].encode()).hexdigest()[:32];print("".join(chr(int(c,16)+97) for c in h))' "$ROOT/dist/chrome-mv3")}"
 DIR="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"
 
-mkdir -p "$DIR" "$NOTES"
-chmod +x "$HERE/host.py"
-/usr/bin/python3 -c 'import json,sys;json.dump({"dir":sys.argv[2]},open(sys.argv[1],"w"),ensure_ascii=False)' "$HERE/config.json" "$NOTES"
+# The helper itself lives outside ~/Documents: macOS does not let Chrome run a
+# program from Documents unless Chrome was given that folder.
+APP="$HOME/Library/Application Support/BrowserTranslate"
+mkdir -p "$DIR" "$NOTES" "$APP"
+cp "$HERE/host.py" "$APP/watchlog-host.py"
+chmod +x "$APP/watchlog-host.py"
+/usr/bin/python3 -c 'import json,sys;json.dump({"dir":sys.argv[2]},open(sys.argv[1],"w"),ensure_ascii=False)' "$APP/config.json" "$NOTES"
+cp "$APP/config.json" "$HERE/config.json"
 cat > "$DIR/com.bizdrive.watchlog.json" <<JSON
 {
   "name": "com.bizdrive.watchlog",
   "description": "BrowserTranslate watch log",
-  "path": "$HERE/host.py",
+  "path": "$APP/watchlog-host.py",
   "type": "stdio",
   "allowed_origins": ["chrome-extension://$ID/"]
 }
