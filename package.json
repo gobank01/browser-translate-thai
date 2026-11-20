@@ -18,7 +18,6 @@
     "format": "prettier --write src",
     "typecheck": "wxt prepare && tsc --noEmit",
     "postinstall": "wxt prepare",
-    "usage": "node scripts/usage.mjs",
     "recommend": "bash watchlog/recommend.sh"
   },
   "dependencies": {
