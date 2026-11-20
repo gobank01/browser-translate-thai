@@ -11,7 +11,7 @@ import type { Cue } from '~/core/subtitles/types';
 import type { SubtitlePosition, SubtitleStyle } from '~/core/subtitles/style';
 import { translateBatch, abortTranslate } from '~/messaging/client';
 import type { TranslateBatchRequest } from '~/messaging/types';
-import { mountDubButton, removeDubButton, setDubStatus, showDubToast, type DubButtonHandle, type DubUiStrings } from './dubUi';
+import { mountDubButton, removeDubButton, setDubStatus, showDubToast, showLessonPanel, type LessonStrings, type LessonView, type DubButtonHandle, type DubUiStrings } from './dubUi';
 import { createDubScheduler, mergeCues, type DubScheduler, type DubLine } from '~/core/dub/scheduler';
 import { createDucker, type Ducker } from '~/core/dub/ducking';
 import { loadVoices, pickVoice } from '~/core/dub/voice';
@@ -51,6 +51,9 @@ export interface DubStrings extends DubUiStrings {
   nativeAlready: string;
   /** Action: dub it ourselves anyway. */
   useOwnDub: string;
+  /** The "summarize what I've watched" menu item and its panel. */
+  lessonMenu: string;
+  lesson: LessonStrings;
   /** On-video progress. `{n}` / `{total}` are filled in. */
   statusLoading: string;
   statusTranslating: string;
@@ -82,6 +85,8 @@ export interface DubDeps {
   voiceForVideo?: () => Promise<string | null>;
   /** The viewer picked `voiceURI` from the player menu: keep it for this video's channel. */
   rememberVoice?: (voiceURI: string) => void;
+  /** Build a study note from the part already watched (absent: no lesson feature). */
+  makeLesson?: (lines: Array<{ startMs: number; text: string }>) => Promise<LessonView>;
   /** Fetch a cloud voice's audio for one line (absent: system voices only). */
   fetchCloudAudio?: (text: string, voiceId: string) => Promise<string>;
 }
@@ -98,6 +103,10 @@ export interface VideoSubTranslator {
   isDubbing: () => boolean;
   /** The cues loaded for this video, with whatever has been translated so far. */
   transcript: () => Array<{ startMs: number; text: string; translation?: string }>;
+  /** Summarize what has been watched so far, in a panel on the video. */
+  showLesson: () => Promise<void>;
+  /** The last lesson made for this video, for the watch log. */
+  lesson: () => LessonView | null;
 }
 
 /** Longest the video is held waiting for the dub before it plays regardless. */
@@ -316,6 +325,7 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
         voices: dub.fetchCloudAudio
           ? sameProviderVoices(dub.getSettings().voiceURI).map((v) => ({ value: v.uri, label: `${v.gender === 'female' ? '♀' : '♂'} ${v.name}` }))
           : [],
+        ...(dub.makeLesson && { onLesson: () => { void showLesson(); }, lessonLabel: dub.strings.lessonMenu }),
         onMenuChange: ({ voiceURI, ...rest }) => {
           if (Object.keys(rest).length) dub.setSettings(rest);
           if (!voiceURI) return;
@@ -523,11 +533,36 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     dubButton?.setState('off');
   }
 
+  let lastLesson: LessonView | null = null;
+
+  async function showLesson(): Promise<void> {
+    const dub = deps.dub;
+    if (!dub?.makeLesson) return;
+    const video = site.findVideo();
+    const now = (video?.currentTime ?? 0) * 1000;
+    const lines = cues
+      .filter((c) => c.startMs <= now)
+      .map((c) => ({ startMs: c.startMs, text: translator?.get(c.id) ?? c.text }));
+    const seek = (ms: number) => { if (video) video.currentTime = ms / 1000; };
+    if (!lines.length) { console.warn('[BrowserTranslate] lesson: nothing watched yet', cues.length, now); showLessonPanel(site.selectors, dub.strings.lesson.failed, dub.strings.lesson, seek); return; }
+    showLessonPanel(site.selectors, null, dub.strings.lesson, seek);
+    try {
+      lastLesson = await dub.makeLesson(lines);
+      showLessonPanel(site.selectors, lastLesson, dub.strings.lesson, seek);
+    } catch (e) {
+      console.warn('[BrowserTranslate] lesson failed:', e);
+      showLessonPanel(site.selectors, dub.strings.lesson.failed, dub.strings.lesson, seek);
+    }
+  }
+
   function transcript() {
     return cues.map((c) => ({ startMs: c.startMs, text: c.text, translation: translator?.get(c.id) }));
   }
 
-  return { attachButton, disable, teardown, isOn: () => on, toggleDub, isDubbing: () => dubbing, transcript };
+  return {
+    attachButton, disable, teardown, isOn: () => on, toggleDub, isDubbing: () => dubbing, transcript,
+    showLesson, lesson: () => lastLesson,
+  };
 }
 
 /** A language code as a word in the page's language ("en" → "อังกฤษ"), or the code. */

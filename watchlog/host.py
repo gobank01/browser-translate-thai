@@ -93,6 +93,16 @@ def note(rec, entry):
     desc = (rec.get('description') or '').strip()
     if desc:
         lines += ['## คำอธิบายคลิป', '', desc, '']
+    lesson = rec.get('lesson')
+    if lesson and lesson.get('summary'):
+        lines += ['## สรุปบทเรียน', '', lesson['summary'], '']
+        for p in lesson.get('points') or []:
+            lines.append(f'- `{mmss(p.get("atMs", 0))}` {p.get("text", "")}')
+        terms = lesson.get('terms') or []
+        if terms:
+            lines += ['', '**คำศัพท์และแนวคิด**', '']
+            lines += [f'- **{t.get("term", "")}** — {t.get("meaning", "")}' for t in terms]
+        lines.append('')
     tr = rec.get('transcript') or []
     if tr:
         has_th = any(t.get('translation') for t in tr)

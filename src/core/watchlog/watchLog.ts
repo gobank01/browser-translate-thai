@@ -30,6 +30,8 @@ export interface WatchRecord {
   /** ISO time this sitting with the video began; repeated flushes share it. */
   session: string;
   transcript: TranscriptLine[];
+  /** A study note made while watching, if one was asked for. */
+  lesson?: import('~/core/dub/lesson').Lesson;
 }
 
 /** Less than this is browsing, not watching. */
@@ -63,6 +65,7 @@ export function buildRecord(input: {
   language?: string;
   transcript: TranscriptLine[];
   session: string;
+  lesson?: import('~/core/dub/lesson').Lesson | null;
   now?: Date;
 }): WatchRecord {
   const { details, clock } = input;
@@ -82,5 +85,6 @@ export function buildRecord(input: {
     at: (input.now ?? new Date()).toISOString(),
     session: input.session,
     transcript: input.transcript,
+    ...(input.lesson && { lesson: input.lesson }),
   };
 }

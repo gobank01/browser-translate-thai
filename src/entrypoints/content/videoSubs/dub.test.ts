@@ -37,6 +37,7 @@ const DUB_STRINGS: DubDeps['strings'] = {
   statusLoading: 'loading', statusTranslating: 'translating {n}/{total}', statusVoicing: 'voicing {n}/{total}',
   statusReady: 'ready', statusHeld: 'held',
   nativeSwitched: 'native switched', nativeAlready: 'native already', useOwnDub: 'own',
+  lessonMenu: 'lesson', lesson: { title: 'T', loading: 'L', failed: 'F', points: 'P', terms: 'Te', close: 'C' },
 };
 
 const KANYA = { name: 'Kanya', lang: 'th-TH', voiceURI: 'kanya', localService: true } as SpeechSynthesisVoice;
@@ -277,4 +278,22 @@ describe('Thai dub in the player', () => {
     expect(subs.isDubbing()).toBe(false);
     expect(toast()?.textContent).toContain('native already');
   });
+
+  it('summarizes what has been watched in a panel whose points jump the video', async () => {
+    const makeLesson = vi.fn(async () => ({ summary: 'สรุป', points: [{ atMs: 2000, text: 'จุดแรก' }], terms: [{ term: 'AI', meaning: 'ปัญญาประดิษฐ์' }] }));
+    const { subs } = make({ makeLesson });
+    await subs.attachButton();
+    await subs.toggleDub();
+    await flush();
+    video().currentTime = 4;
+    await subs.showLesson();
+    expect(makeLesson).toHaveBeenCalledWith([{ startMs: 0, text: 'ไทย:Hello' }]);
+    const panel = document.querySelector('.bt-lesson')!;
+    expect(panel.textContent).toContain('สรุป');
+    expect(panel.textContent).toContain('ปัญญาประดิษฐ์');
+    panel.querySelector<HTMLButtonElement>('.at')!.click();
+    expect(video().currentTime).toBe(2);
+    expect(subs.lesson()?.summary).toBe('สรุป');
+  });
 });
+

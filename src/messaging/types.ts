@@ -147,7 +147,17 @@ export interface RememberVoiceRequest {
   voiceURI: string;
 }
 
+/** Content script → background: a study note from the part of a video watched. */
+export interface LessonRequest {
+  type: 'learn:lesson';
+  title: string;
+  lines: Array<{ startMs: number; text: string }>;
+}
+
+export type LessonResponse = { ok: true; lesson: import('~/core/dub/lesson').Lesson } | { ok: false; error: string };
+
 export type Request =
+  | LessonRequest
   | ChannelVoiceRequest
   | RememberVoiceRequest
   | WatchLogRequest

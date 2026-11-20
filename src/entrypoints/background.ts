@@ -20,6 +20,7 @@ import { batchSystemPrompt, batchUserPrompt } from '~/core/batch/prompt';
 import { clipKey, getClip, putClip } from '~/core/dub/audioCache';
 import { modelFor, synthesize } from '~/core/dub/cloudTts';
 import { guessGender, rememberChannelVoice, voiceForChannel, type ChannelVoices } from '~/core/dub/channelVoice';
+import { makeLesson } from '~/core/dub/lesson';
 import { PERSONAL_BUILD, PRESET_MODEL } from '~/storage/personalPreset';
 
 /** Per-channel dub voices, kept apart from app:data so changing one rebuilds nothing. */
@@ -68,6 +69,13 @@ export default defineBackground(() => {
   const activeAborts = new Map<string, AbortController>();
 
   chrome.runtime.onMessage.addListener((msg: Request, _sender, sendResponse) => {
+    if (msg.type === 'learn:lesson') {
+      const key = import.meta.env.WXT_OPENROUTER_KEY;
+      if (!key) { sendResponse({ ok: false, error: 'no-key' }); return false; }
+      void makeLesson(msg.title, msg.lines, key, PRESET_MODEL)
+        .then((lesson) => sendResponse({ ok: true, lesson }), (e) => sendResponse({ ok: false, error: String(e) }));
+      return true; // async response
+    }
     if (msg.type === 'dub:voice') {
       const key = import.meta.env.WXT_OPENROUTER_KEY;
       void voiceForChannel(msg.video, msg.current, {

@@ -2,6 +2,20 @@
 
 All notable changes will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.3] — 2026-11-20
+
+### Added
+- **Lesson so far.** Option+S (or "Summarize what I've watched" in the TH
+  button's right-click menu) opens a panel on the video with a Thai study note
+  of the part already watched: the gist, the key points with their times — a
+  click jumps back to that moment — and the terms worth knowing. Built from the
+  subtitles already translated, so it costs one short model call (well under a
+  baht). With the watch log on, the note is saved into the video's note too.
+
+### Fixed
+- The translator was rebuilt when YouTube announced the page it had just
+  loaded, which could stop a dub that had just started.
+
 ## [0.3.2] — 2026-11-19
 
 ### Changed

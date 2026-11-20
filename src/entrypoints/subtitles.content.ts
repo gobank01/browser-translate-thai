@@ -14,7 +14,7 @@ import { PROVIDERS, type ProviderId } from '~/core/providers/registry';
 import type { AppData } from '~/storage/schema';
 import { DEFAULT_DUB_SETTINGS, type DubSettings } from '~/core/dub/settings';
 import { routeProblem } from '~/core/engines/routing';
-import type { ChannelVoiceRequest, CloudTtsRequest, CloudTtsResponse, OpenOptionsRequest, RememberVoiceRequest } from '~/messaging/types';
+import type { ChannelVoiceRequest, LessonRequest, LessonResponse, CloudTtsRequest, CloudTtsResponse, OpenOptionsRequest, RememberVoiceRequest } from '~/messaging/types';
 import { CLOUD_TTS } from '~/core/dub/cloudVoice';
 import { startWatchTracker } from './content/watchTracker';
 import { requestCaptionTracks } from './content/videoSubs/requestCaptionTracks';
@@ -107,7 +107,11 @@ export default defineContentScript({
     let dubSettings: DubSettings = DEFAULT_DUB_SETTINGS;
     let subs: VideoSubTranslator | null = null;
 
+    /** The page the translator was last built for. */
+    let attachedHref = '';
+
     async function reattach() {
+      attachedHref = location.href;
       subs?.teardown();
       subs = null;
 
@@ -177,6 +181,15 @@ export default defineContentScript({
             void client.patchSettings({ dub: dubSettings });
           },
           hasEngine: () => subtitleReady,
+          // Study notes need a model: only builds with an OpenRouter key.
+          ...(import.meta.env.WXT_OPENROUTER_KEY && {
+            makeLesson: async (lines: Array<{ startMs: number; text: string }>) => {
+              const req: LessonRequest = { type: 'learn:lesson', title: document.title.replace(/ - YouTube$/, ''), lines };
+              const res = await chrome.runtime.sendMessage(req) as LessonResponse | undefined;
+              if (!res?.ok) throw new Error(res?.error ?? 'no response');
+              return res.lesson;
+            },
+          }),
           // YouTube with cloud voices: a voice that matches the channel's speaker.
           ...(CLOUD_TTS && site.id === 'youtube' && {
             voiceForVideo: async () => {
@@ -235,6 +248,12 @@ export default defineContentScript({
             nativeSwitched: t('dubNativeSwitched', locale),
             nativeAlready: t('dubNativeAlready', locale),
             useOwnDub: t('dubUseOwn', locale),
+            lessonMenu: t('dubLessonMenu', locale),
+            lesson: {
+              title: t('dubLessonTitle', locale), loading: t('dubLessonLoading', locale),
+              failed: t('dubLessonFailed', locale), points: t('dubLessonPoints', locale),
+              terms: t('dubLessonTerms', locale), close: t('dubLessonClose', locale),
+            },
           },
         },
       });
@@ -250,6 +269,7 @@ export default defineContentScript({
         mediaKey: () => (location.pathname === '/watch' && new URLSearchParams(location.search).get('v')) || '',
         transcript: () => subs?.transcript() ?? [],
         isDubbing: () => subs?.isDubbing() ?? false,
+        lesson: () => subs?.lesson() ?? null,
         fetchDetails: async () => {
           const res = await requestCaptionTracks();
           return { details: res.details, language: res.tracks.find((t) => t.kind === 'asr')?.languageCode };
@@ -275,17 +295,21 @@ export default defineContentScript({
     window.addEventListener('yt-navigate-finish', () => {
       // A copy left behind by a reloaded extension has nothing to talk to.
       if (!chrome.runtime?.id) return;
+      // YouTube fires this on the first load too; rebuilding then would stop
+      // a dub that has just started on the same video.
+      if (subs && location.href === attachedHref) return;
       void reattach();
     });
 
     // Alt+D turns the Thai dub on and off. Matched on the physical key: on a Mac
     // Option+D types "∂", so `key` would never be "d".
     window.addEventListener('keydown', (e) => {
-      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.code !== 'KeyD') return;
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || (e.code !== 'KeyD' && e.code !== 'KeyS')) return;
       if (!subs || !dubSettings.enabled || isTyping(e.target) || !chrome.runtime?.id) return;
       e.preventDefault();
       e.stopPropagation();
-      void subs.toggleDub();
+      // Option+D: dub on/off · Option+S: summarize what has been watched.
+      void (e.code === 'KeyD' ? subs.toggleDub() : subs.showLesson());
     }, true);
 
     chrome.storage.onChanged.addListener((changes, area) => {

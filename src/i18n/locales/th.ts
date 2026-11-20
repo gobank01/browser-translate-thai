@@ -246,4 +246,11 @@ export const th: Record<StringKey, string> = {
   dubNativeAlready: 'คลิปนี้มีเสียงไทยของ YouTube อยู่แล้ว ·',
   dubUseOwn: 'ใช้เสียงพากย์ของเราแทน',
   dubPreferNative: 'ใช้เสียงไทยที่ YouTube มีให้ก่อน (ฟรี) ถ้าคลิปนั้นมี',
+  dubLessonMenu: 'สรุปสิ่งที่ดูไปแล้ว (Option+S)',
+  dubLessonTitle: 'สรุปบทเรียน',
+  dubLessonLoading: 'กำลังสรุปส่วนที่ดูไปแล้ว…',
+  dubLessonFailed: 'ยังสรุปไม่ได้ ลองใหม่หลังดูไปสักพัก',
+  dubLessonPoints: 'ประเด็นสำคัญ (กดเวลาเพื่อย้อนดู)',
+  dubLessonTerms: 'คำศัพท์และแนวคิด',
+  dubLessonClose: 'ปิด',
 };

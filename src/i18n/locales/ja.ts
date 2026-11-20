@@ -262,4 +262,11 @@ export const ja: Record<StringKey, string> = {
   dubNativeAlready: 'This video is already playing Thai audio ·',
   dubUseOwn: 'Use our dub instead',
   dubPreferNative: "Use a video's own Thai audio track first (free) when it has one",
+  dubLessonMenu: "Summarize what I've watched (Option+S)",
+  dubLessonTitle: 'Lesson so far',
+  dubLessonLoading: 'Summarizing what you have watched…',
+  dubLessonFailed: 'Nothing to summarize yet — try again a little later',
+  dubLessonPoints: 'Key points (click a time to jump back)',
+  dubLessonTerms: 'Terms and ideas',
+  dubLessonClose: 'Close',
 };

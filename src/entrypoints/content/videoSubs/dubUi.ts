@@ -30,6 +30,9 @@ export interface DubButtonDeps {
   onMenuChange: (patch: { duckVolume?: number; rate?: number; voiceURI?: string; volume?: number }) => void;
   /** Voices to switch between from the menu (e.g. female / male). Empty: none shown. */
   voices?: readonly { value: string; label: string }[];
+  /** "Summarize what I've watched", offered in the menu when present. */
+  onLesson?: () => void;
+  lessonLabel?: string;
 }
 
 export interface DubButtonHandle {
@@ -77,6 +80,21 @@ const CSS = `
 .bt-dub-menu label:last-child{margin-bottom:0}
 .bt-dub-menu span{display:flex;justify-content:space-between}
 .bt-dub-menu input{width:100%;accent-color:#3ea6ff}
+.bt-dub-learn{display:block;width:100%;margin-bottom:10px;padding:8px;border:0;border-radius:6px;background:#3ea6ff;
+  color:#000;font:600 13px/1.2 Roboto,Arial,sans-serif;cursor:pointer;text-align:left}
+.bt-dub-learn:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.bt-lesson{position:absolute;top:12px;right:12px;bottom:64px;z-index:2147483001;width:min(380px,45%);overflow:auto;
+  padding:14px 16px;border-radius:12px;background:rgb(18 18 18 / 0.94);color:#fff;font:400 14px/1.55 Roboto,Arial,sans-serif}
+.bt-lesson h3{margin:0 0 8px;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bt-lesson h4{margin:14px 0 6px;font-size:13px;font-weight:700;color:#9fd2ff}
+.bt-lesson p{margin:0}
+.bt-lesson ul{margin:0;padding:0;list-style:none}
+.bt-lesson li{margin:0 0 6px}
+.bt-lesson .at{margin-right:8px;padding:1px 6px;border:0;border-radius:4px;background:#3ea6ff;color:#000;
+  font:600 12px/1.4 Roboto,Arial,sans-serif;cursor:pointer}
+.bt-lesson .close{border:0;background:none;color:#fff;font-size:20px;line-height:1;cursor:pointer}
+.bt-lesson .at:focus-visible,.bt-lesson .close:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.bt-lesson .muted{color:#bbb}
 .bt-dub-voices{display:flex;gap:6px;margin-bottom:10px}
 .bt-dub-voices button{flex:1;padding:6px 0;border:1px solid #555;border-radius:6px;background:none;
   color:#fff;font:500 13px/1 Roboto,Arial,sans-serif;cursor:pointer}
@@ -179,6 +197,14 @@ function openMenu(selectors: SiteSelectors, anchor: HTMLElement, deps: DubButton
     wrap.append(head, input);
     return wrap;
   };
+  if (deps.onLesson && deps.lessonLabel) {
+    const learn = document.createElement('button');
+    learn.type = 'button';
+    learn.className = 'bt-dub-learn';
+    learn.textContent = `📝 ${deps.lessonLabel}`;
+    learn.addEventListener('click', () => { menu.remove(); deps.onLesson!(); });
+    menu.appendChild(learn);
+  }
   if (deps.voices?.length) {
     const row = document.createElement('div');
     row.className = 'bt-dub-voices';
@@ -292,3 +318,86 @@ export function setDubStatus(selectors: SiteSelectors, status: DubStatus | null)
     (bar.firstChild as HTMLElement).style.width = `${Math.round(Math.min(1, Math.max(0, status.progress)) * 100)}%`;
   }
 }
+
+export interface LessonView {
+  summary: string;
+  points: Array<{ atMs: number; text: string }>;
+  terms: Array<{ term: string; meaning: string }>;
+}
+
+export interface LessonStrings { title: string; loading: string; failed: string; points: string; terms: string; close: string }
+
+/**
+ * The lesson panel on the right of the picture. `lesson` null shows the
+ * loading state; a string shows an error. Points jump the video to their time.
+ * Text is set with textContent only.
+ */
+export function showLessonPanel(
+  selectors: SiteSelectors, lesson: LessonView | null | string, strings: LessonStrings, onSeek: (ms: number) => void,
+): void {
+  const player = document.querySelector<HTMLElement>(selectors.player);
+  if (!player) return;
+  ensureStyle();
+  player.querySelector('.bt-lesson')?.remove();
+  const panel = document.createElement('section');
+  panel.className = 'bt-lesson';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-label', strings.title);
+  const h = document.createElement('h3');
+  const title = document.createElement('span');
+  title.textContent = `📝 ${strings.title}`;
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'close';
+  close.textContent = '×';
+  close.setAttribute('aria-label', strings.close);
+  close.addEventListener('click', () => panel.remove());
+  h.append(title, close);
+  panel.appendChild(h);
+  const para = (text: string, cls?: string) => {
+    const p = document.createElement('p');
+    if (cls) p.className = cls;
+    p.textContent = text;
+    return p;
+  };
+  if (lesson === null) panel.appendChild(para(strings.loading, 'muted'));
+  else if (typeof lesson === 'string') panel.appendChild(para(lesson, 'muted'));
+  else {
+    panel.appendChild(para(lesson.summary));
+    const section = (heading: string, items: HTMLElement[]) => {
+      if (!items.length) return;
+      const h4 = document.createElement('h4');
+      h4.textContent = heading;
+      const ul = document.createElement('ul');
+      ul.append(...items);
+      panel.append(h4, ul);
+    };
+    section(strings.points, lesson.points.map((pt) => {
+      const li = document.createElement('li');
+      const at = document.createElement('button');
+      at.type = 'button';
+      at.className = 'at';
+      const s = Math.floor(pt.atMs / 1000);
+      at.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+      at.addEventListener('click', () => onSeek(pt.atMs));
+      li.append(at, document.createTextNode(pt.text));
+      return li;
+    }));
+    section(strings.terms, lesson.terms.map((t) => {
+      const li = document.createElement('li');
+      const b = document.createElement('b');
+      b.textContent = t.term;
+      li.append(b, document.createTextNode(` — ${t.meaning}`));
+      return li;
+    }));
+  }
+  for (const type of ['click', 'pointerdown', 'mousedown', 'keydown', 'wheel'] as const) {
+    panel.addEventListener(type, (e) => {
+      if (e instanceof KeyboardEvent && e.key === 'Escape') panel.remove();
+      e.stopPropagation();
+    });
+  }
+  player.appendChild(panel);
+  close.focus();
+}
+

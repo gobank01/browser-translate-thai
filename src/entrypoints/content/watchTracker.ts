@@ -13,6 +13,8 @@ export interface WatchTrackerDeps {
   /** What the subtitle translator has for this video right now. */
   transcript: () => TranscriptLine[];
   isDubbing: () => boolean;
+  /** The latest study note for this video, if any. */
+  lesson?: () => import('~/core/dub/lesson').Lesson | null;
   fetchDetails: () => Promise<{ details?: VideoDetails; language?: string }>;
   send: (record: WatchRecord) => void;
 }
@@ -36,7 +38,7 @@ export function startWatchTracker(deps: WatchTrackerDeps): () => void {
 
   function flush(): void {
     if (!key || !meta?.details || meta.details.videoId !== key || clock.watchedS < MIN_WATCH_S) return;
-    deps.send(buildRecord({ details: meta.details, clock, dubbed, language: meta.language, transcript: lines, session }));
+    deps.send(buildRecord({ details: meta.details, clock, dubbed, language: meta.language, transcript: lines, session, lesson: deps.lesson?.() }));
     lastFlush = Date.now();
   }
 
