@@ -19,6 +19,7 @@ import type { ChannelVoiceRequest, LessonRequest, LessonResponse, SpeakersReques
 import { CLOUD_TTS } from '~/core/dub/cloudVoice';
 import { startWatchTracker } from './content/watchTracker';
 import { requestCaptionTracks } from './content/videoSubs/requestCaptionTracks';
+import { youtubeVideoId } from './content/videoSubs/bridgeProtocol';
 import type { WatchLogRequest } from '~/messaging/types';
 
 /**
@@ -208,7 +209,7 @@ export default defineContentScript({
           ...(CLOUD_TTS && site.id === 'youtube' && {
             voiceForVideo: async () => {
               const { details } = await requestCaptionTracks();
-              const videoId = new URLSearchParams(location.search).get('v');
+              const videoId = youtubeVideoId(location);
               if (!details || details.videoId !== videoId) return null;
               channelId = details.channelId;
               const req: ChannelVoiceRequest = {
@@ -281,7 +282,7 @@ export default defineContentScript({
     if (import.meta.env.WXT_WATCHLOG && window.top === window && location.hostname.endsWith('youtube.com')) {
       const stopWatching = startWatchTracker({
         findVideo: () => document.querySelector<HTMLVideoElement>('video.html5-main-video, video'),
-        mediaKey: () => (location.pathname === '/watch' && new URLSearchParams(location.search).get('v')) || '',
+        mediaKey: () => youtubeVideoId(location),
         transcript: () => subs?.transcript() ?? [],
         isDubbing: () => subs?.isDubbing() ?? false,
         lesson: () => subs?.lesson() ?? null,

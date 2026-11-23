@@ -2,6 +2,18 @@
 
 All notable changes will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.8] — 2026-11-23
+
+### Added
+- **YouTube Shorts.** Shorts are translated and dubbed like any other video:
+  the TH and subtitle buttons sit in the top corner of the Short (Shorts have
+  no control bar), and auto-dub waits a moment for the Short's captions, which
+  arrive after its player.
+- **Players on other sites.** On any page whose video player carries captions
+  (standard HTML5 players, Video.js, Plyr, JW Player, Canvas, Zoom recordings),
+  the TH button now appears too — in the player's corner when it has no bar.
+  Videos without any captions still cannot be dubbed.
+
 ## [0.3.7] — 2026-11-20
 
 ### Fixed

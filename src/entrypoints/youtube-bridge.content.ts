@@ -8,6 +8,8 @@ import {
   type TranscriptResponse,
   type VideoDetails,
   BT_AUDIO_REQ,
+  youtubePlayerId,
+  youtubeVideoId,
   BT_AUDIO_RES,
   type AudioTrackRequest,
   type AudioTrackResponse,
@@ -46,7 +48,7 @@ export default defineContentScript({
     }
 
     async function fetchTranscriptViaInnertube(lang: string): Promise<string> {
-      const videoId = new URLSearchParams(location.search).get('v');
+      const videoId = youtubeVideoId(location);
       if (!videoId) throw new Error('no videoId in URL');
       const key = readInnertubeKey();
       if (!key) throw new Error('no INNERTUBE_API_KEY');
@@ -98,7 +100,7 @@ export default defineContentScript({
       // like "th.3".
       if (ds === BT_AUDIO_REQ) {
         const { id, lang } = e.data as AudioTrackRequest;
-        const pl = document.getElementById('movie_player') as (HTMLElement & {
+        const pl = document.getElementById(youtubePlayerId(location)) as (HTMLElement & {
           getAvailableAudioTracks?: () => unknown[];
           getAudioTrack?: () => unknown;
           setAudioTrack?: (t: unknown) => void;
@@ -126,7 +128,7 @@ export default defineContentScript({
 
       if (ds !== BT_REQ) return;
 
-      const player = document.getElementById('movie_player') as
+      const player = document.getElementById(youtubePlayerId(location)) as
         | (HTMLElement & {
             getPlayerResponse?: () => unknown;
             getOption?: (module: string, option: string) => unknown;

@@ -81,3 +81,16 @@ describe('the generic adapter', () => {
     expect(site.mediaKey()).toBe(location.pathname + location.search);
   });
 });
+
+describe('YouTube Shorts', () => {
+  it('is handled by the YouTube adapter, keyed by the Short id', async () => {
+    const { youtubeMatcher } = await import('./youtube');
+    const { youtubeVideoId, youtubePlayerId } = await import('../bridgeProtocol');
+    const loc = { hostname: 'www.youtube.com', pathname: '/shorts/MK1zLrR9gpM', search: '' };
+    expect(youtubeMatcher.matches(loc)).toBe(true);
+    expect(youtubeVideoId(loc)).toBe('MK1zLrR9gpM');
+    expect(youtubePlayerId(loc)).toBe('shorts-player');
+    expect(youtubeVideoId({ pathname: '/watch', search: '?v=abc&t=1' })).toBe('abc');
+    expect(youtubePlayerId({ pathname: '/watch' })).toBe('movie_player');
+  });
+});

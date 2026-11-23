@@ -121,6 +121,9 @@ export interface VideoSubTranslator {
 
 /** Longest the video is held waiting for the dub before it plays regardless. */
 const HOLD_MAX_MS = 20_000;
+/** Re-asks for captions that were not ready yet, for auto-dub. */
+const PROBE_RETRIES = 6;
+const PROBE_RETRY_MS = 1000;
 /** Separates voice and text in a line's audio key. */
 const VOICE_SEP = '\u0001';
 /** How far ahead speakers are worked out, how many lines at a time, and when to stop trying. */
@@ -329,7 +332,14 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     // Probe up front so the toggle is never offered on media that has nothing to
     // translate. Only a definite no hides it — a site that cannot tell yet gets
     // the button, and says so when it is pressed.
-    const probe = await site.probe();
+    let probe = await site.probe();
+    // A player that is up before its captions are (YouTube Shorts) answers
+    // "can't tell" at first; for auto-dub, ask again a few times before
+    // settling for that.
+    for (let i = 0; probe.kind === 'unknown' && deps.dub?.getSettings().autoStart && i < PROBE_RETRIES; i++) {
+      await new Promise((r) => setTimeout(r, PROBE_RETRY_MS));
+      probe = await site.probe();
+    }
     if (probe.kind === 'none') {
       removeSubsButton();
       removeDubButton();

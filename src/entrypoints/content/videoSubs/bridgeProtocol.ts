@@ -63,3 +63,13 @@ export interface TranscriptResponse {
   body: string;
   error?: string;
 }
+
+/** The video id of a YouTube watch page (`?v=`) or a Short (`/shorts/<id>`). */
+export function youtubeVideoId(loc: Pick<Location, 'pathname' | 'search'>): string {
+  return new URLSearchParams(loc.search).get('v') ?? loc.pathname.match(/^\/shorts\/([\w-]+)/)?.[1] ?? '';
+}
+
+/** Shorts play in their own player element; everything else in #movie_player. */
+export function youtubePlayerId(loc: Pick<Location, 'pathname'>): string {
+  return loc.pathname.startsWith('/shorts/') ? 'shorts-player' : 'movie_player';
+}

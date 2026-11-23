@@ -61,6 +61,8 @@ const CSS = `
 @keyframes bt-dub-spin{to{transform:rotate(360deg)}}
 @keyframes bt-dub-wave{0%,100%{opacity:1}50%{opacity:0.35}}
 @media (prefers-reduced-motion:reduce){.${BTN_CLASS} *{animation:none!important}}
+.bt-dub-corner{position:absolute!important;top:12px;right:60px;z-index:2147483000;height:34px;border:none;
+  border-radius:8px;background:rgb(0 0 0 / 0.55)!important;backdrop-filter:blur(4px)}
 .bt-dub-status{position:absolute;left:12px;top:12px;z-index:2147483000;display:flex;align-items:center;gap:8px;
   max-width:min(460px,85%);padding:8px 12px;border-radius:999px;background:rgb(0 0 0 / 0.78);color:#fff;
   font:500 14px/1.3 Roboto,Arial,sans-serif;pointer-events:none;transition:opacity 300ms}
@@ -120,18 +122,28 @@ export function mountDubButton(
   selectors: SiteSelectors,
   deps: DubButtonDeps,
 ): DubButtonHandle | null {
-  const host = style.container ? document.querySelector(style.container) : null;
+  const bar = style.container ? document.querySelector(style.container) : null;
+  // No control bar (YouTube Shorts, an unknown player): the corner of the
+  // picture, just left of the subtitle button that sits there.
+  const corner = !bar && style.fallback === 'player-corner'
+    ? document.querySelector<HTMLElement>(selectors.player) : null;
+  const host = bar ?? corner;
   if (!host) return null;
   ensureStyle();
   removeDubButton();
 
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = style.className ? `${style.className} ${BTN_CLASS}` : BTN_CLASS;
+  btn.className = style.className && !corner ? `${style.className} ${BTN_CLASS}` : BTN_CLASS;
   btn.setAttribute('aria-haspopup', 'menu');
-  const subs = host.querySelector('.bt-subs-button');
-  if (subs) subs.after(btn);
-  else host.insertBefore(btn, host.firstChild);
+  if (corner) {
+    btn.classList.add('bt-dub-corner');
+    corner.appendChild(btn);
+  } else {
+    const subs = host.querySelector('.bt-subs-button');
+    if (subs) subs.after(btn);
+    else host.insertBefore(btn, host.firstChild);
+  }
 
   let state: DubButtonState = 'off';
   let pressTimer = 0;

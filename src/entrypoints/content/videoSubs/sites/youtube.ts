@@ -4,7 +4,7 @@ import { fetchTranscriptText } from '../transcriptBridge';
 import { switchToNativeAudio } from '../nativeAudio';
 import { thaiShare } from '~/core/dub/thai';
 import { isMusicVideo } from '~/core/watchlog/music';
-import type { CaptionsResponse } from '../bridgeProtocol';
+import { youtubeVideoId, type CaptionsResponse } from '../bridgeProtocol';
 import type { SiteMatcher, SiteProbe, SubtitleSite } from '../site';
 import type { Cue } from '~/core/subtitles/types';
 
@@ -16,7 +16,7 @@ import type { Cue } from '~/core/subtitles/types';
  * and the transcript both come back over the MAIN-world bridge that watches the
  * player's own requests — see `requestCaptionTracks` and `transcriptBridge`.
  */
-export function createYouTubeSite(): SubtitleSite {
+export function createYouTubeSite(shorts = false): SubtitleSite {
   // Probed once when the button is offered and reused when it is pressed, so a
   // press does not pay for a second round trip through the bridge.
   let probed: CaptionsResponse | null = null;
@@ -37,26 +37,33 @@ export function createYouTubeSite(): SubtitleSite {
 
   return {
     id: 'youtube',
-    selectors: {
-      player: '#movie_player',
-      nativeCaptions: '.ytp-caption-window-container',
-      controls: '.ytp-chrome-bottom',
-      autohideClass: 'ytp-autohide',
-    },
-    button: {
-      container: '.ytp-right-controls',
-      className: 'ytp-button',
-      place: 'start',
-      idleColor: '#fff',
-      activeColor: '#3ea6ff',
-      width: '48px',
-    },
+    // Shorts play in their own player with no control bar, so the buttons go
+    // in the corner of the picture there.
+    selectors: shorts
+      ? { player: '#shorts-player', nativeCaptions: '.ytp-caption-window-container' }
+      : {
+          player: '#movie_player',
+          nativeCaptions: '.ytp-caption-window-container',
+          controls: '.ytp-chrome-bottom',
+          autohideClass: 'ytp-autohide',
+        },
+    button: shorts
+      ? { fallback: 'player-corner', width: '40px' }
+      : {
+          container: '.ytp-right-controls',
+          className: 'ytp-button',
+          place: 'start',
+          idleColor: '#fff',
+          activeColor: '#3ea6ff',
+          width: '48px',
+        },
 
-    findVideo: () => document.querySelector<HTMLVideoElement>('video.html5-main-video, video'),
+    findVideo: () => document.querySelector<HTMLVideoElement>(
+      shorts ? '#shorts-player video' : '#movie_player video.html5-main-video, video.html5-main-video, video'),
 
     // YouTube swaps videos in place, so the id in the address is the only thing
     // that says the cues on screen belong to what is playing.
-    mediaKey: () => new URLSearchParams(location.search).get('v') ?? '',
+    mediaKey: () => youtubeVideoId(location),
 
     async probe(): Promise<SiteProbe> {
       const found = await captions();
@@ -92,6 +99,6 @@ export function createYouTubeSite(): SubtitleSite {
 }
 
 export const youtubeMatcher: SiteMatcher = {
-  matches: (loc) => loc.hostname.endsWith('youtube.com') && loc.pathname === '/watch',
-  create: createYouTubeSite,
+  matches: (loc) => loc.hostname.endsWith('youtube.com') && (loc.pathname === '/watch' || loc.pathname.startsWith('/shorts/')),
+  create: () => createYouTubeSite(location.pathname.startsWith('/shorts/')),
 };
