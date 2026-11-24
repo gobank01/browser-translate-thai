@@ -20,6 +20,7 @@ import { batchSystemPrompt, batchUserPrompt } from '~/core/batch/prompt';
 import { clipKey, getClip, putClip } from '~/core/dub/audioCache';
 import { modelFor, synthesize } from '~/core/dub/cloudTts';
 import { guessGender, rememberChannelVoice, voiceForChannel, type ChannelVoices } from '~/core/dub/channelVoice';
+import { transcribe } from '~/core/dub/stt';
 import { makeLesson } from '~/core/dub/lesson';
 import { labelSpeakers } from '~/core/dub/speakers';
 import { PERSONAL_BUILD, PRESET_MODEL } from '~/storage/personalPreset';
@@ -103,6 +104,15 @@ export default defineBackground(() => {
         void chrome.runtime.sendNativeMessage(WATCHLOG_HOST, msg.record).catch(() => {});
       }
       return false;
+    }
+    if (msg.type === 'stt:transcribe') {
+      const key = import.meta.env.WXT_ELEVENLABS_KEY;
+      if (!key) { sendResponse({ ok: false, error: 'no-key' }); return false; }
+      const bytes = Uint8Array.from(atob(msg.audio), (c) => c.charCodeAt(0));
+      void transcribe(new Blob([bytes], { type: msg.mime.split(';')[0] }), key)
+        .then((r) => sendResponse({ ok: true, ...r }))
+        .catch((e) => sendResponse({ ok: false, error: String(e) }));
+      return true;
     }
     if (msg.type === 'tts:cloud') {
       void cloudTts(msg.text, msg.voiceId).then(sendResponse);

@@ -57,7 +57,7 @@ async function main() {
 
   // 1. Voice — the one key most people need.
   say('1) ElevenLabs key (แนะนำ ใส่ตัวนี้ตัวเดียวก็ใช้ได้) — เสียงพากย์ไทยชาย/หญิงที่เป็นธรรมชาติ');
-  say('   สร้างที่ https://elevenlabs.io/app/settings/api-keys (เปิดสิทธิ์ Text to Speech และ Voices: read)');
+  say('   สร้างที่ https://elevenlabs.io/app/settings/api-keys (เปิดสิทธิ์ Text to Speech, Speech to Text และ Voices: read)');
   say('   ใช้เครดิตแพ็กเกจ ElevenLabs ของคุณ · ไม่ใส่ = เสียงไทย Kanya ของ Mac ฟรี');
   const el = await ask('   ElevenLabs key', old.WXT_ELEVENLABS_KEY ? '(ใช้ของเดิม)' : '');
   const elKey = el === '(ใช้ของเดิม)' ? old.WXT_ELEVENLABS_KEY : el;

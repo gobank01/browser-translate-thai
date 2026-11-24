@@ -2,6 +2,19 @@
 
 All notable changes will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.9] — 2026-11-24
+
+### Added
+- **Videos with no subtitles can be dubbed.** Where a player streams its
+  video (YouTube, Facebook, Instagram, Vimeo and most others), the audio it
+  has already downloaded is transcribed by ElevenLabs Scribe in ~30-second
+  chunks about a minute ahead of the playhead, then translated and dubbed as
+  usual. Only what is watched is transcribed (about 0.13 baht a minute), and
+  the same audio is never sent twice. A clip spoken in Thai stops after its
+  first chunk. On YouTube it starts by itself (not for Thai titles or songs);
+  elsewhere press TH. Needs the ElevenLabs key with Speech to Text allowed.
+  Players that load one whole file (TikTok) are not covered yet.
+
 ## [0.3.8] — 2026-11-23
 
 ### Added

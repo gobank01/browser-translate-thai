@@ -258,6 +258,8 @@ export const zhTW: Record<StringKey, string> = {
   dubStatusVoicing: 'Preparing the voice {n}/{total}',
   dubStatusReady: 'Thai dub ready',
   dubStatusHeld: 'paused until ready, plays by itself',
+  dubStatusTranscribing: 'No subtitles: listening to the audio…',
+  dubNoAudio: "This video has no subtitles and its audio can't be reached, so it can't be dubbed",
   dubNativeSwitched: "Playing YouTube's own Thai audio (free, in sync) ·",
   dubNativeAlready: 'This video is already playing Thai audio ·',
   dubUseOwn: 'Use our dub instead',

@@ -46,6 +46,8 @@ export interface CueTranslatorDeps {
 export interface CueTranslator {
   /** Load the track. Nothing is translated until the first pump(). */
   start: (cues: Cue[]) => void;
+  /** Queue more cues for a track that arrives piece by piece (transcribed audio). */
+  add: (cues: Cue[]) => void;
   /** Fill the window around the current playhead. Safe to call often. */
   pump: () => void;
   get: (cueId: number) => string | undefined;
@@ -170,6 +172,10 @@ export function createCueTranslator(deps: CueTranslatorDeps): CueTranslator {
     for (const cue of cues) remaining.set(cue.id, cue);
   }
 
+  function add(cues: Cue[]): void {
+    for (const cue of cues) if (!map.has(cue.id)) remaining.set(cue.id, cue);
+  }
+
   function pump(): void {
     if (remaining.size === 0) return;
     const myEpoch = epoch;
@@ -191,5 +197,5 @@ export function createCueTranslator(deps: CueTranslatorDeps): CueTranslator {
     map.clear();
   }
 
-  return { start, pump, get: (id) => map.get(id), isFailed: (id) => failed.has(id), teardown };
+  return { start, add, pump, get: (id) => map.get(id), isFailed: (id) => failed.has(id), teardown };
 }

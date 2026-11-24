@@ -15,7 +15,7 @@ import type { AppData } from '~/storage/schema';
 import { DEFAULT_DUB_SETTINGS, type DubSettings } from '~/core/dub/settings';
 import { routeProblem } from '~/core/engines/routing';
 import type { SpeakerLabels, SpeakerLine } from '~/core/dub/speakers';
-import type { ChannelVoiceRequest, LessonRequest, LessonResponse, SpeakersRequest, SpeakersResponse, CloudTtsRequest, CloudTtsResponse, OpenOptionsRequest, RememberVoiceRequest } from '~/messaging/types';
+import type { ChannelVoiceRequest, SttRequest, SttResponse, LessonRequest, LessonResponse, SpeakersRequest, SpeakersResponse, CloudTtsRequest, CloudTtsResponse, OpenOptionsRequest, RememberVoiceRequest } from '~/messaging/types';
 import { CLOUD_TTS } from '~/core/dub/cloudVoice';
 import { startWatchTracker } from './content/watchTracker';
 import { requestCaptionTracks } from './content/videoSubs/requestCaptionTracks';
@@ -228,6 +228,15 @@ export default defineContentScript({
               try { void chrome.runtime.sendMessage(req).catch(() => {}); } catch { /* extension reloaded */ }
             },
           }),
+          // Videos with no captions: transcribe the audio (ElevenLabs Scribe).
+          ...(import.meta.env.WXT_ELEVENLABS_KEY && {
+            transcribe: async (audio: ArrayBuffer, mime: string) => {
+              const req: SttRequest = { type: 'stt:transcribe', audio: await toBase64(audio), mime };
+              const res = await chrome.runtime.sendMessage(req) as SttResponse | undefined;
+              if (!res?.ok) throw new Error(res?.error ?? 'no response');
+              return { language: res.language, words: res.words };
+            },
+          }),
           ...(CLOUD_TTS && {
             fetchCloudAudio: async (text: string, voiceId: string) => {
               const req: CloudTtsRequest = { type: 'tts:cloud', text, voiceId };
@@ -260,6 +269,8 @@ export default defineContentScript({
             statusVoicing: t('dubStatusVoicing', locale),
             statusReady: t('dubStatusReady', locale),
             statusHeld: t('dubStatusHeld', locale),
+            statusTranscribing: t('dubStatusTranscribing', locale),
+            noAudio: t('dubNoAudio', locale),
             nativeSwitched: t('dubNativeSwitched', locale),
             nativeAlready: t('dubNativeAlready', locale),
             useOwnDub: t('dubUseOwn', locale),
@@ -379,4 +390,14 @@ function onlySubtitleAppearanceChanged(
     settings: { ...d.settings, subtitlePosition: null, subtitleStyle: null, dub: d.settings.dub?.enabled },
   });
   return JSON.stringify(blank(before)) === JSON.stringify(blank(after));
+}
+
+/** Base64 of a chunk of audio, for a message to the background. */
+function toBase64(buf: ArrayBuffer): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).slice(String(r.result).indexOf(',') + 1));
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(new Blob([buf]));
+  });
 }

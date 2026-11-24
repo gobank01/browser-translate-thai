@@ -147,6 +147,15 @@ export interface RememberVoiceRequest {
   voiceURI: string;
 }
 
+/** Content script → background: transcribe a span of a video's audio (base64). */
+export interface SttRequest {
+  type: 'stt:transcribe';
+  audio: string;
+  mime: string;
+}
+
+export type SttResponse = { ok: true; language: string; words: import('~/core/dub/stt').SttWord[] } | { ok: false; error: string };
+
 /** Content script → background: a study note from the part of a video watched. */
 export interface LessonRequest {
   type: 'learn:lesson';
@@ -167,6 +176,7 @@ export interface SpeakersRequest {
 export type SpeakersResponse = { ok: true; labels: import('~/core/dub/speakers').SpeakerLabels } | { ok: false; error: string };
 
 export type Request =
+  | SttRequest
   | SpeakersRequest
   | LessonRequest
   | ChannelVoiceRequest

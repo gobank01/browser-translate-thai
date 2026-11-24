@@ -21,6 +21,8 @@ import { voiceOfGender } from '~/core/dub/channelVoice';
 import { cloudVoiceId, sameProviderVoices, createCloudVoice, type PreparedEngine } from '~/core/dub/cloudVoice';
 import type { SpeechEngine } from '~/core/dub/scheduler';
 import type { DubSettings } from '~/core/dub/settings';
+import { isThaiCode, type SttResult } from '~/core/dub/stt';
+import { startTranscribeLoop, type TranscribeLoop } from './transcribeLoop';
 
 export interface VideoSubsStrings extends SubtitleUiStrings {
   titleOff: string; titleOn: string; noCaptions: string;
@@ -66,6 +68,10 @@ export interface DubStrings extends DubUiStrings {
   statusReady: string;
   /** Appended while the video is held until the dub is ready. */
   statusHeld: string;
+  /** The video has no captions and its audio is being transcribed. */
+  statusTranscribing: string;
+  /** No captions, and the player's audio could not be reached to transcribe. */
+  noAudio: string;
   noSubs: string;
   noVoice: string;
   noVoiceHelp: string;
@@ -99,6 +105,8 @@ export interface DubDeps {
   makeLesson?: (lines: Array<{ startMs: number; text: string }>) => Promise<LessonView>;
   /** Fetch a cloud voice's audio for one line (absent: system voices only). */
   fetchCloudAudio?: (text: string, voiceId: string) => Promise<string>;
+  /** Speech to text, for videos with no captions (absent: those are skipped). */
+  transcribe?: (audio: ArrayBuffer, mime: string) => Promise<SttResult>;
 }
 
 export interface VideoSubTranslator {
@@ -138,6 +146,9 @@ const SPEAKER_WAIT_MS = 4000;
 const GAP_HOLD_MAX_MS = 6000;
 /** How long "ready" stays on screen. */
 const READY_NOTE_MS = 1500;
+/** Least time between two waits for transcription to catch up. */
+const BEHIND_HOLD_EVERY_MS = 30_000;
+const byStart = (a: { startMs: number }, b: { startMs: number }) => a.startMs - b.startMs;
 
 export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSubTranslator {
   const { site } = deps;
@@ -173,6 +184,11 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
   /** The current wait is for one late line, not the start of the dub. */
   let gapHold = false;
   let dubVolumeAt = -1;
+  /** Captions made from the audio, for a video that has none. */
+  let transcriber: TranscribeLoop | null = null;
+  /** What the dub speaks; grows as transcribed lines come in. */
+  let dubLines: DubLine[] = [];
+  let behindHoldAt = 0;
 
   function currentTimeMs(): number {
     return Math.round((site.findVideo()?.currentTime ?? 0) * 1000);
@@ -247,7 +263,10 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     const probe = await site.probe();
     if (!on) return; // reader toggled off during the await
     if (probe.kind === 'live') { deps.notify(deps.strings.live); disable(); return; }
-    if (probe.kind === 'none') { deps.notify(deps.strings.noCaptions); disable(); return; }
+    if (probe.kind === 'none') {
+      if (canTranscribe()) { startTranscribing(); return; }
+      deps.notify(deps.strings.noCaptions); disable(); return;
+    }
 
     // `unknown` goes ahead and asks. Some sites can only answer by fetching the
     // transcript, and doing that before the reader has asked for a translation
@@ -256,6 +275,8 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     try {
       fetched = await site.fetchTranscript();
     } catch {
+      if (!on) return;
+      if (canTranscribe()) { startTranscribing(); return; }
       deps.notify(probe.kind === 'unknown' && probe.hint === 'enableCaptions'
         ? deps.strings.enableCc
         : deps.strings.failed);
@@ -263,7 +284,10 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
       return;
     }
     if (!on) return; // reader toggled off during the await
-    if (fetched.length === 0) { deps.notify(deps.strings.noCaptions); disable(); return; }
+    if (fetched.length === 0) {
+      if (canTranscribe()) { startTranscribing(); return; }
+      deps.notify(deps.strings.noCaptions); disable(); return;
+    }
     // Captions already in Thai, for a Thai target: nothing to translate or dub.
     if (deps.getTargetLang().toLowerCase().startsWith('th') && mostlyThai(fetched)) {
       alreadyThai = true;
@@ -271,7 +295,10 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
       return;
     }
     cues = fetched;
+    startTranslator();
+  }
 
+  function startTranslator(): void {
     translator = createCueTranslator({
       translateBatchFn: (req) => translateBatch(req as TranslateBatchRequest),
       abortFn: abortTranslate,
@@ -294,6 +321,38 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     pump();
   }
 
+  /** The player streams its audio (MSE), so it can be tapped and transcribed. */
+  function canTranscribe(): boolean {
+    return Boolean(deps.dub?.transcribe && site.findVideo()?.currentSrc.startsWith('blob:'));
+  }
+
+  function startTranscribing(): void {
+    const video = site.findVideo()!;
+    cues = [];
+    startTranslator();
+    transcriber = startTranscribeLoop({
+      video,
+      transcribe: deps.dub!.transcribe!,
+      onCues: (more) => {
+        cues.push(...more);
+        cues.sort(byStart);
+        translator?.add(more);
+        dubLines.push(...mergeCues(more));
+        dubLines.sort(byStart);
+        pump();
+      },
+      onLanguage: (code) => {
+        if (!deps.getTargetLang().toLowerCase().startsWith('th') || !isThaiCode(code)) return true;
+        // Spoken in Thai: nothing to translate, and nothing more to pay for.
+        alreadyThai = true;
+        const wasDubbing = dubbing;
+        disable();
+        if (wasDubbing && deps.dub) dubToast(deps.dub.strings.alreadyThai);
+        return false;
+      },
+    });
+  }
+
   function pump(): void {
     translator?.pump();
   }
@@ -314,6 +373,8 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     detachPump();
     translator?.teardown();
     translator = null;
+    transcriber?.stop();
+    transcriber = null;
     cues = [];
     // The UI stays: its menu is how translation gets turned back on.
     ui?.setActive(false);
@@ -340,7 +401,8 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
       await new Promise((r) => setTimeout(r, PROBE_RETRY_MS));
       probe = await site.probe();
     }
-    if (probe.kind === 'none') {
+    const transcribable = probe.kind === 'none' && canTranscribe();
+    if (probe.kind === 'none' && !transcribable) {
       removeSubsButton();
       removeDubButton();
       teardown();
@@ -390,11 +452,17 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
       ? (probe.spokenLanguage ?? probe.languageCode)?.toLowerCase().split('-')[0]
       : undefined;
     // Unknown language: do nothing by itself rather than spend on a Thai video.
-    if (s?.enabled && s.autoStart && !dubbing && probe.kind === 'ready' && !probe.music && spoken && spoken !== target) {
+    // No captions: only on YouTube, where a page is one video someone chose,
+    // and not for a Thai title or a song — the first chunk is paid for.
+    const autoTranscribe = transcribable && probe.kind === 'none' && site.id === 'youtube'
+      && !probe.thai && !probe.music && target === 'th';
+    if (s?.enabled && s.autoStart && !dubbing && (autoTranscribe
+      || (probe.kind === 'ready' && !probe.music && spoken && spoken !== target))) {
       void toggleDub().then(() => {
         if (!dubbing || !deps.dub) return;
         // Say why a voice just started, and how to stop it.
-        dubToast(deps.dub.strings.autoStarted.replace('{lang}', languageLabel(spoken, deps.dub.strings.uiLocale)),
+        const auto = deps.dub.strings.autoStarted;
+        dubToast(spoken ? auto.replace('{lang}', languageLabel(spoken, deps.dub.strings.uiLocale)) : auto.replace(/ · [^·]*\{lang\}/, ''),
           { label: deps.dub.strings.stop, run: stopDub });
       });
     }
@@ -473,19 +541,20 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     if (!on) { stopDub(); dubToast(alreadyThai ? s.alreadyThai : s.noSubs); return; }
     if (!dubbing) return; // turned off again while the transcript loaded
     const video = site.findVideo();
-    if (!translator || cues.length === 0 || !video) {
+    if (!translator || (cues.length === 0 && !transcriber) || !video) {
       stopDub();
       dubToast(s.noSubs);
       return;
     }
     const tr = translator;
+    dubLines = mergeCues(cues);
     ducker = createDucker(video);
     duckedAt = dub.getSettings().duckVolume;
     ducker.duck(duckedAt);
     dubScheduler = createDubScheduler({
       synth,
       video,
-      lines: mergeCues(cues),
+      lines: dubLines,
       getText: (line: DubLine) => {
         const parts: string[] = [];
         for (const id of line.ids) {
@@ -536,6 +605,23 @@ export function createVideoSubTranslator(deps: VideoSubTranslatorDeps): VideoSub
     if (!dubScheduler) {
       setDubStatus(site.selectors, { text: withHold(s.statusLoading) });
       return;
+    }
+    const video0 = site.findVideo();
+    if (transcriber && video0) {
+      if (transcriber.failed()) { stopDub(); dubToast(s.noAudio); return; }
+      // The transcript has not reached the playhead: wait for it (once in a
+      // while — a player that buffers little would otherwise stutter).
+      if (!transcriber.covers(video0.currentTime + 0.5)) {
+        if (!holding && !video0.paused && transcriber.started() && now - behindHoldAt > BEHIND_HOLD_EVERY_MS) {
+          behindHoldAt = now;
+          gapHold = true;
+          hold(GAP_HOLD_MAX_MS);
+        }
+        if (holding && now > holdUntil) release();
+        readySince = 0;
+        setDubStatus(site.selectors, { text: withHold(s.statusTranscribing) });
+        return;
+      }
     }
     const r = dubScheduler.readiness();
     // Mid-video, the next line about to start without its voice would be a

@@ -73,16 +73,16 @@ export function createYouTubeSite(shorts = false): SubtitleSite {
       if (!found) return { kind: 'unknown', hint: 'enableCaptions' };
       if (found.isLive) return { kind: 'live' };
       const track = pickTrack(found.tracks, trackPref(found));
-      if (!track) return { kind: 'none' };
-      // Auto-generated captions are made from the audio, so their language is
-      // the language being spoken — whatever track the viewer has on screen.
-      const asr = found.tracks.find((t) => t.kind === 'asr');
       // No auto-captions: a title in Thai script is the best remaining clue
       // that the video is spoken in Thai.
       const thaiTitle = thaiShare(found.details?.title ?? '') > 0.3 ? 'th' : undefined;
+      const music = found.details ? isMusicVideo(found.details) : false;
+      if (!track) return { kind: 'none', thai: Boolean(thaiTitle), music };
+      // Auto-generated captions are made from the audio, so their language is
+      // the language being spoken — whatever track the viewer has on screen.
+      const asr = found.tracks.find((t) => t.kind === 'asr');
       return {
-        kind: 'ready', languageCode: track.languageCode, spokenLanguage: asr?.languageCode ?? thaiTitle,
-        music: found.details ? isMusicVideo(found.details) : false,
+        kind: 'ready', languageCode: track.languageCode, spokenLanguage: asr?.languageCode ?? thaiTitle, music,
       };
     },
 

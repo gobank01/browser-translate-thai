@@ -35,7 +35,7 @@ const DUB_STRINGS: DubDeps['strings'] = {
   noSubs: 'no subs', noVoice: 'no voice', noVoiceHelp: 'how', noEngine: 'no engine', openSettings: 'settings',
   autoStarted: 'auto {lang}', stop: 'stop', uiLocale: 'th',
   statusLoading: 'loading', statusTranslating: 'translating {n}/{total}', statusVoicing: 'voicing {n}/{total}',
-  statusReady: 'ready', statusHeld: 'held',
+  statusReady: 'ready', statusHeld: 'held', statusTranscribing: 'transcribing', noAudio: 'no audio',
   nativeSwitched: 'native switched', nativeAlready: 'native already', useOwnDub: 'own', alreadyThai: 'already thai',
   lessonMenu: 'lesson', lesson: { title: 'T', loading: 'L', failed: 'F', points: 'P', terms: 'Te', close: 'C' },
 };
