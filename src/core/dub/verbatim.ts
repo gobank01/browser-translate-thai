@@ -24,11 +24,15 @@ function distance(a: string, b: string): number {
   return prev[b.length]!;
 }
 
+/** Thai polite endings the narrator likes to tack on; short enough to slip under the 5% slack. */
+const PARTICLE_END = /(ครับผม|ครับ|ค่ะ|คะ|จ้า)$/;
+
 /** True when `spoken` is `line`, give or take ~5% of its characters. */
 export function saidVerbatim(line: string, spoken: string): boolean {
   const a = normalizeSpoken(line);
   const b = normalizeSpoken(spoken);
   if (!a || !b) return false;
+  if (PARTICLE_END.test(b) && !PARTICLE_END.test(a)) return false;
   if (a === b) return true;
   return distance(a, b) <= Math.max(1, Math.floor(a.length * 0.05));
 }

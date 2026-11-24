@@ -2,6 +2,16 @@
 
 All notable changes will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.10] — 2026-11-24
+
+### Fixed
+- **Thai lines no longer end in ครับ/ค่ะ.** Subtitle translation (dub or
+  not) now writes like a narrator and only keeps a polite particle where the
+  original has a matching word (sir, please). The GPT Audio Mini voice could
+  also tack ครับ onto a long line and still pass the "said it word for word"
+  check; that now counts as a miss and the line is read again. The lesson
+  summary is written without particles too.
+
 ## [0.3.9] — 2026-11-24
 
 ### Added

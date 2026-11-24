@@ -69,6 +69,7 @@ export async function makeLesson(
           role: 'system',
           content: 'You turn the watched part of a video into a short study note in Thai for a Thai learner. '
             + 'Use only what is in the transcript. Keep technical terms as commonly said (ทับศัพท์ or English). '
+            + 'Write plain note style: no polite particles (ครับ, ค่ะ, นะครับ, นะคะ). '
             + 'Reply with JSON only: {"summary": "2-3 sentence gist in Thai", '
             + '"points": [{"time": "m:ss from the transcript", "text": "one key point in Thai"}] (3-6 items, in order), '
             + '"terms": [{"term": "term as said", "meaning": "short Thai explanation"}] (0-6 items)}.',

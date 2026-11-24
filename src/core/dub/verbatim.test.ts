@@ -18,6 +18,12 @@ describe('saidVerbatim', () => {
     expect(saidVerbatim('แล้วเจอกันใหม่', 'แล้วเจอกันใหม่นะครับ ขอบคุณที่รับชม')).toBe(false);
     expect(saidVerbatim('แล้วเจอกันใหม่', '')).toBe(false);
   });
+
+  it('rejects a polite particle tacked onto a long line', () => {
+    const line = 'วันนี้เราจะมาดูกันว่า AI ช่วยให้ธุรกิจออนไลน์ขายของได้ง่ายขึ้นยังไง อย่างละเอียดทีละขั้นตอน';
+    expect(saidVerbatim(line, line + 'ครับ')).toBe(false);
+    expect(saidVerbatim(line + 'ครับ', line + 'ครับ')).toBe(true);
+  });
 });
 
 describe('pcm16ToWav', () => {

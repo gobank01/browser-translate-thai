@@ -12,8 +12,18 @@ export const SPOKEN_STYLE =
   'No parentheses, brackets, ellipses, emoji or symbols that cannot be spoken. ' +
   'Do not force native equivalents onto loanwords: technical terms, product names and words native speakers ' +
   'normally borrow (AI, agent, prompt, model, app, update…) stay as they are commonly said — in Thai, written ' +
-  'as the usual Thai transliteration (ทับศัพท์, e.g. เอเจนต์, พรอมต์, โมเดล, แอป), with brand names kept in English. ' +
-  'No polite sentence-final particles (such as ครับ/ค่ะ in Thai) unless the speaker is clearly being polite.';
+  'as the usual Thai transliteration (ทับศัพท์, e.g. เอเจนต์, พรอมต์, โมเดล, แอป), with brand names kept in English.';
+
+/**
+ * Models translating into Thai like to end every line with ครับ/ค่ะ, which on a
+ * whole video reads (and, dubbed, sounds) like a call-centre script.
+ */
+export const NO_PARTICLES =
+  'SENTENCE ENDINGS\n' +
+  'Write like a narrator, not a customer-service agent: do NOT end lines with polite particles ' +
+  '(in Thai: ครับ, ค่ะ, คะ, นะครับ, นะคะ, ครับผม, จ้า). A speaker addressing the audience, greeting or explaining ' +
+  'is not a reason to add one. Use a particle only when the original itself has an explicit politeness or ' +
+  'softening word there (sir, ma\'am, please, okay?), and then sparingly.';
 
 /** Internal ID-based batch protocol, not editable with the user's base prompt. */
 export function batchSystemPrompt(
@@ -25,6 +35,7 @@ export function batchSystemPrompt(
   return (
     'BASE INSTRUCTIONS\n' + basePrompt + '\n\n' +
     (spoken && surface === 'subtitle' ? SPOKEN_STYLE + '\n\n' : '') +
+    (surface === 'subtitle' ? NO_PARTICLES + '\n\n' : '') +
     translationContext(targetLang) + '\n\n' +
     'OUTPUT PROTOCOL — these format rules take precedence over conflicting base instructions.\n' +
     `You translate ${surface === 'subtitle' ? 'video subtitle' : 'web page'} text segments. ` +
